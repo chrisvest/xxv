@@ -1,0 +1,17 @@
+[package]
+name = "xv"
+version = "0.1.0"
+authors = ["Chris Vest <mr.chrisvest@gmail.com>"]
+edition = "2018"
+
+[profile.release]
+overflow-checks = true
+codegen-units = 1
+lto = true
+
+[dependencies]
+clap = "2.32.0"
+cursive = "0.10.0"
+
+[dev-dependencies]
+tempfile = "2"
