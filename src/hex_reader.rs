@@ -112,7 +112,11 @@ impl HexReader {
         let (x, y) = self.window_pos;
         let (w, h) = self.window_size;
         let base_offset = y * self.line_length;
-        let height = (h as usize).min(self.capture.len() / w as usize);
+        let mut capture_height = self.capture.len() / w as usize;
+        if capture_height * (w as usize) < self.capture.len() {
+            capture_height += 1;
+        }
+        let height = (h as usize).min(capture_height);
         let mut bufout = String::with_capacity(self.get_row_offsets_width() * height);
         
         if self.reader.use_large_addresses() {
@@ -232,6 +236,29 @@ mod tests {
         //  89ab    38 39 61 62
         //  cdef    63 64 65 66
         assert_eq!(hex, "30 31 32 33\n34 35 36 37\n38 39 61 62\n63 64 65 66");
+        let mut offsets = String::new();
+        reader.visit_row_offsets(&mut offsets);
+        assert_eq!(offsets, "0x00000000\n0x00000004\n0x00000008\n0x0000000C");
+    }
+    
+    #[test]
+    fn hex_view_bigger_than_unaligned_file() {
+        let mut tmpf = tempfile::NamedTempFile::new().unwrap();
+        tmpf.write(b"0123456789abcde").unwrap();
+
+        let mut reader = HexReader::new(TilingByteReader::new(tmpf.path()).unwrap()).unwrap();
+        reader.window_pos = (0,0);
+        reader.window_size = (4,16);
+        reader.line_length = 4;
+        reader.capture();
+        let mut hex = String::new();
+        reader.visit_hex(&mut hex);
+        // Bytes:  Hex:
+        //  0123    30 31 32 33
+        //  4567    34 35 36 37
+        //  89ab    38 39 61 62
+        //  cdef    63 64 65 66
+        assert_eq!(hex, "30 31 32 33\n34 35 36 37\n38 39 61 62\n63 64 65");
         let mut offsets = String::new();
         reader.visit_row_offsets(&mut offsets);
         assert_eq!(offsets, "0x00000000\n0x00000004\n0x00000008\n0x0000000C");
