@@ -16,8 +16,8 @@ use crate::hex_reader::HexVisitor;
 
 pub struct HexView {
     reader: HexReader,
-    text: Panel<TextView>,
     invalidated: bool,
+    show_data_view: bool,
     offsets_column_width: usize,
     hex_column_width: usize,
     data_column_width: usize,
@@ -29,8 +29,8 @@ impl HexView {
         let title = reader.file_name().to_owned();
         HexView {
             reader,
-            text: Panel::new(TextView::new("poke")).title(title),
             invalidated: true,
+            show_data_view: true,
             offsets_column_width: 0,
             hex_column_width: 0,
             data_column_width: 0,
@@ -95,9 +95,16 @@ struct HexPrinter<'a, 'b, 'x> {
 
 impl<'a, 'b, 'x> HexVisitor for HexPrinter<'a, 'b, 'x> {
     fn byte(&mut self, byte: &str) {
+        if self.pos.x != self.initial_offset {
+            self.pos.x += 1;
+        }
         self.printer.print(self.pos, byte);
         self.pos.x += 2;
-        self.printer.print(self.pos, " ");
+    }
+
+    fn group(&mut self) {
+        self.pos.x += 1;
+        self.printer.print(self.pos, "┊");
         self.pos.x += 1;
     }
 
@@ -127,7 +134,7 @@ impl View for HexView {
         let border_offset = offset_column_width + 1;
         printer.print_vline(Vec2::new(border_offset, 1), printer.size.y - 2, "│");
         
-        let hex_column_offset = border_offset + 1;
+        let hex_column_offset = border_offset + 2;
         let mut hex_printer = HexPrinter {
             initial_offset: hex_column_offset,
             max_width: 0,
@@ -135,12 +142,12 @@ impl View for HexView {
             printer
         };
         self.reader.visit_hex(&mut hex_printer);
-        
-//        let saved_for_later = "┊";
-        // render hex column
-        // border
+
+        if self.show_data_view {
+            let border_offset = hex_printer.max_width + 1;
+            printer.print_vline(Vec2::new(border_offset, 1), printer.size.y - 2, "│");
+        }
         // render data colunm
-//        self.text.draw(printer)
     }
 
     fn layout(&mut self, constraint: Vec2) {
@@ -155,7 +162,6 @@ impl View for HexView {
         self.offsets_column_width = offsets_colunm;
         self.hex_column_width = hex_colunm;
         self.data_column_width = data_column;
-        self.text.layout(constraint);
     }
 
     fn needs_relayout(&self) -> bool {

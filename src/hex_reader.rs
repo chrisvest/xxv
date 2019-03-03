@@ -63,6 +63,8 @@ pub trait OffsetsVisitor {
 pub trait HexVisitor {
     fn byte(&mut self, byte: &str);
     
+    fn group(&mut self);
+    
     fn next_line(&mut self);
     
     fn end(&mut self);
@@ -72,7 +74,7 @@ pub struct HexReader {
     reader: TilingByteReader,
     offset: u64,
     pub line_length: u64,
-    group: u32,
+    group: u16,
     pub window_pos: (u64,u64),
     pub window_size: (u16,u16),
     capture: Box<Vec<u8>>,
@@ -145,6 +147,8 @@ impl HexReader {
             if i == w {
                 visitor.next_line();
                 i = 0;
+            } else if i % self.group == 0 {
+                visitor.group();
             }
         }
         visitor.end();
@@ -176,6 +180,10 @@ mod tests {
         fn byte(&mut self, byte: &str) {
             self.push_str(byte);
             self.push(' ');
+        }
+
+        fn group(&mut self) {
+            // Nothing to do.
         }
 
         fn next_line(&mut self) {

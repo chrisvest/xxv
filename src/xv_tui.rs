@@ -28,14 +28,7 @@ pub fn run_tui(reader: HexReader) {
         ColorType::Palette(PaletteColor::Background));
     let hint_key_style = Style::none().combine(hints_style).combine(Effect::Underline);
 
-//    let title = reader.file_name().to_owned();
-    let mut data_pane = HexView::new(reader);
-//    let mut data_panel = Panel::new(data_pane)
-//        .title(title)
-//        .with_id("data_panel");
-//    reader.capture().unwrap();
-//    let string = reader.get_hex();
-//    let mut data_pane = TextView::new(string.as_str());
+    let data_pane = HexView::new(reader);
 
     let mut hints_bar_string = StyledString::new();
     hints_bar_string.append_styled("Q", hint_key_style);
