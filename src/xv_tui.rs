@@ -4,11 +4,11 @@ use cursive::theme::*;
 use cursive::traits::*;
 use cursive::utils::markup::*;
 use cursive::views::*;
-use std::fmt::Write;
 
 use crate::hex_reader::HexReader;
+use crate::hex_view::HexView;
 
-pub fn run_tui(reader: &mut HexReader) {
+pub fn run_tui(reader: HexReader) {
     // +-----------------------------------+
     // |         |             |           |
     // | address | hex view    | data view |  }- data pane (scrollable)
@@ -28,10 +28,14 @@ pub fn run_tui(reader: &mut HexReader) {
         ColorType::Palette(PaletteColor::Background));
     let hint_key_style = Style::none().combine(hints_style).combine(Effect::Underline);
 
-//    let mut data_pane = HexView::new(reader);
-    reader.capture().unwrap();
-    let string = reader.get_hex();
-    let mut data_pane = TextView::new(string.as_str());
+//    let title = reader.file_name().to_owned();
+    let mut data_pane = HexView::new(reader);
+//    let mut data_panel = Panel::new(data_pane)
+//        .title(title)
+//        .with_id("data_panel");
+//    reader.capture().unwrap();
+//    let string = reader.get_hex();
+//    let mut data_pane = TextView::new(string.as_str());
 
     let mut hints_bar_string = StyledString::new();
     hints_bar_string.append_styled("Q", hint_key_style);
@@ -49,9 +53,9 @@ pub fn run_tui(reader: &mut HexReader) {
     let mut hints_bar = TextView::new(hints_bar_string);
     let mut progress_bar = TextView::new(StyledString::styled("progress bar", hints_style));
 
-    let mut work_area = StackView::new().fullscreen_layer(data_pane.full_screen());
+    let work_area = StackView::new().fullscreen_layer(data_pane.full_screen());
 
-    let mut status_bar = PaddedView::new((1, 1, 0, 0), LinearLayout::horizontal()
+    let status_bar = PaddedView::new((1, 1, 0, 0), LinearLayout::horizontal()
         .child(hints_bar.full_width())
         .child(progress_bar));
 

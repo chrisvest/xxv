@@ -10,12 +10,13 @@ use std::sync::Arc;
 use std::collections::BTreeMap;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::SyncSender;
-use cursive::rect::Rect;
 use std::io::Read;
 
 pub struct TilingByteReader {
     file: File,
-    length: u64
+    length: u64,
+    use_large_addresses: bool,
+    display_name: String
 }
 
 pub struct Segment {
@@ -44,9 +45,10 @@ pub type Window = (u64, u64, u16, u16);
 //}
 
 impl TilingByteReader {
-    pub fn new<P: AsRef<Path>>(file: P) -> Result<TilingByteReader> {
-        let mut f = File::open(file)?;
-        let file_len = f.metadata()?.len();
+    pub fn new<P: AsRef<Path>>(file_name: P) -> Result<TilingByteReader> {
+        let display_name: String = file_name.as_ref().file_name().unwrap().to_string_lossy().into();
+        let mut file = File::open(file_name)?;
+        let file_len = file.metadata()?.len();
 
         let cache = Arc::new(Mutex::new(BTreeMap::new()));
         let (segments_in, segments_out) = sync_channel::<Box<Segment>>(10);
@@ -62,7 +64,16 @@ impl TilingByteReader {
             .name("XV Cache Evicter".to_owned())
             .spawn(move || run_evicter(evicter_cache, segments_in))?;
 
-        Ok(TilingByteReader{file: f, length: file_len})
+        Ok(TilingByteReader {
+            file,
+            length: file_len,
+            use_large_addresses: file_len > std::u32::MAX as u64,
+            display_name: display_name
+        })
+    }
+    
+    pub fn file_name(&self) -> &str {
+        &self.display_name
     }
 
     pub fn get_window(&mut self, window: Window, line_length: u64, buf: &mut Vec<u8>) -> Result<()> {
@@ -89,6 +100,10 @@ impl TilingByteReader {
     
     pub fn get_length(&self) -> u64 {
         self.length
+    }
+    
+    pub fn use_large_addresses(&self) -> bool {
+        self.use_large_addresses
     }
 }
 

@@ -12,6 +12,7 @@ lto = true
 [dependencies]
 clap = "2.32.0"
 cursive = "0.10.0"
+unicode-width = "0.1.5"
 
 [dev-dependencies]
 tempfile = "2"

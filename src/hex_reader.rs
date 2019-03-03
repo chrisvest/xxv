@@ -1,12 +1,8 @@
 use std::io::Result;
-use std::fmt::Write;
 
 use crate::byte_reader::TilingByteReader;
+use crate::hex_view::HexView;
 
-const DATA_HEX_TABLE: &[u8;16] =
-    b"0123456789abcdef";
-const ADDR_HEX_TABLE: &[u8;16] =
-    b"0123456789ABCDEF";
 const UNICODE_TEXT_TABLE: &str = concat!(
     "\u{2400}\u{2401}\u{2402}\u{2403}\u{2404}\u{2405}\u{2406}\u{2407}",
     "\u{2408}\u{2409}\u{240A}\u{240B}\u{240C}\u{240D}\u{240E}\u{240F}",
@@ -58,7 +54,21 @@ const BYTE_RENDER: &'static [&'static str; 256] = &[
     "e0", "e1", "e2", "e3", "e4", "e5", "e6", "e7", "e8", "e9", "ea", "eb", "ec", "ed", "ee", "ef",
     "f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "fa", "fb", "fc", "fd", "fe", "ff"];
 
-pub struct HexReader<'a> {
+pub trait OffsetsVisitor {
+    fn offset(&mut self, offset: &str);
+    
+    fn end(&mut self);
+}
+
+pub trait HexVisitor {
+    fn byte(&mut self, byte: &str);
+    
+    fn next_line(&mut self);
+    
+    fn end(&mut self);
+}
+
+pub struct HexReader {
     reader: TilingByteReader,
     offset: u64,
     pub line_length: u64,
@@ -66,19 +76,10 @@ pub struct HexReader<'a> {
     pub window_pos: (u64,u64),
     pub window_size: (u16,u16),
     capture: Box<Vec<u8>>,
-    data_view: &'a DataView,
 }
 
-pub struct DataView {
-
-}
-
-const UNICODE_TEXT_VIEW: DataView = DataView {
-
-};
-
-impl<'a> HexReader<'a> {
-    pub fn new(reader: TilingByteReader) -> Result<HexReader<'a>> {
+impl HexReader {
+    pub fn new(reader: TilingByteReader) -> Result<HexReader> {
         Ok(HexReader {
             reader,
             offset: 0,
@@ -86,9 +87,12 @@ impl<'a> HexReader<'a> {
             group: 8,
             window_pos: (0,0),
             window_size: (16,32),
-            capture: Box::new(Vec::new()),
-            data_view: &UNICODE_TEXT_VIEW
+            capture: Box::new(Vec::new())
         })
+    }
+    
+    pub fn file_name(&self) -> &str {
+        self.reader.file_name()
     }
     
     pub fn capture(&mut self) -> Result<()> {
@@ -98,42 +102,52 @@ impl<'a> HexReader<'a> {
         self.reader.get_window((x, y, w, h), self.line_length, &mut self.capture)
     }
     
-    pub fn get_row_offsets(&mut self) -> String {
+    pub fn get_row_offsets_width(&self) -> usize {
+        if self.reader.use_large_addresses() { 16 + 2 } else { 8 + 2 }
+    }
+    
+    pub fn visit_row_offsets(&self, visitor: &mut OffsetsVisitor) {
         let (x, y) = self.window_pos;
         let (w, h) = self.window_size;
-        let first_line_offset = y * self.line_length;
-        let mut bufout = String::with_capacity(11 * h as usize);
-        for i in 0..h as u64 {
-            write!(&mut bufout, "0x{:#08X}\n", first_line_offset + i * self.line_length);
+        let base_offset = y * self.line_length;
+        let height = (h as usize).min(self.capture.len() / w as usize);
+        let mut bufout = String::with_capacity(self.get_row_offsets_width() * height);
+        
+        if self.reader.use_large_addresses() {
+            for i in 0..height as u64 {
+                let offset = base_offset + i * self.line_length;
+                visitor.offset(&format!("0x{:016X}", offset));
+            }
+        } else {
+            for i in 0..height as u64 {
+                let offset = base_offset + i * self.line_length;
+                visitor.offset(&format!("0x{:08X}", offset));
+            }
         }
-        bufout
+        visitor.end();
     }
     
     pub fn get_column_offsets(&mut self) -> String {
         unimplemented!() // todo
     }
 
-    pub fn get_hex(&mut self) -> String {
+    pub fn visit_hex(&self, visitor: &mut HexVisitor) {
         let (x, y) = self.window_pos;
         let (w, h) = self.window_size;
         let cap = self.capture.as_slice();
-        let mut bufout: String = String::with_capacity(cap.len() * 3);
         
         let mut i = 0;
         for b in cap {
             i += 1;
             let r = b.clone() as usize;
-            bufout.push_str(BYTE_RENDER[r]);
+            visitor.byte(BYTE_RENDER[r]);
             
             if i == w {
-                bufout.push('\n');
+                visitor.next_line();
                 i = 0;
-            } else {
-                bufout.push(' ');
             }
         }
-        bufout.pop(); // Remove trailing space or newline.
-        bufout
+        visitor.end();
     }
     
     pub fn get_data(&mut self) -> String {
@@ -146,6 +160,33 @@ mod tests {
     use super::*;
     use std::io::Write;
     use tempfile;
+
+    impl OffsetsVisitor for String {
+        fn offset(&mut self, offset: &str) {
+            self.push_str(offset);
+            self.push('\n');
+        }
+
+        fn end(&mut self) {
+            self.pop();
+        }
+    }
+    
+    impl HexVisitor for String {
+        fn byte(&mut self, byte: &str) {
+            self.push_str(byte);
+            self.push(' ');
+        }
+
+        fn next_line(&mut self) {
+            self.pop();
+            self.push('\n');
+        }
+
+        fn end(&mut self) {
+            self.pop();
+        }
+    }
     
     #[test]
     fn getting_hex_of_file_top_left_window() {
@@ -157,7 +198,8 @@ mod tests {
         reader.window_size = (2,2);
         reader.line_length = 4;
         reader.capture().unwrap();
-        let hex = reader.get_hex();
+        let mut hex = String::new();
+        reader.visit_hex(&mut hex);
         // Bytes:  Hex:
         //  01      30 31
         //  45      34 35
@@ -174,19 +216,16 @@ mod tests {
         reader.window_size = (4,16);
         reader.line_length = 4;
         reader.capture();
-        let hex = reader.get_hex();
+        let mut hex = String::new();
+        reader.visit_hex(&mut hex);
         // Bytes:  Hex:
         //  0123    30 31 32 33
         //  4567    34 35 36 37
         //  89ab    38 39 61 62
         //  cdef    63 64 65 66
-        assert_eq!(hex, "30 31 32 33\n34 35 36 37\n38 39 61 62\n63 64 65 66")
-    }
-    
-    #[test]
-    fn poke() {
-        for b in 0..256 {
-            eprintln!("    \"{:02x}\",", b);
-        }
+        assert_eq!(hex, "30 31 32 33\n34 35 36 37\n38 39 61 62\n63 64 65 66");
+        let mut offsets = String::new();
+        reader.visit_row_offsets(&mut offsets);
+        assert_eq!(offsets, "0x00000000\n0x00000004\n0x00000008\n0x0000000C");
     }
 }

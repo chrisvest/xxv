@@ -25,9 +25,9 @@ fn main() -> Result<()> {
         .get_matches();
 
     // todo support opening multiple files at once
-    let fname = matches.value_of_os("file").unwrap();
-    let mut b_reader = TilingByteReader::new(fname)?;
-    let mut h_reader = HexReader::new(b_reader)?;
-    xv_tui::run_tui(&mut h_reader);
+    let file_name = matches.value_of_os("file").unwrap();
+    let b_reader = TilingByteReader::new(file_name)?;
+    let h_reader = HexReader::new(b_reader)?;
+    xv_tui::run_tui(h_reader);
     Ok(())
 }
