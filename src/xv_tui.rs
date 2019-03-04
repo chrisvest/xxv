@@ -5,30 +5,31 @@ use cursive::traits::*;
 use cursive::utils::markup::*;
 use cursive::views::*;
 
-use crate::hex_reader::HexReader;
+use crate::hex_reader::{HexReader, HexVisitor};
 use crate::hex_view::HexView;
 
 pub fn run_tui(reader: HexReader) {
-    // +-----------------------------------+
-    // |         |             |           |
-    // | address | hex view    | data view |  }- data pane (scrollable)
-    // |         |             |           |
-    // +-----------------------------------+
-    // | menu & hints         progress bar | }- status bar
-    // +-----------------------------------+
+    // +-------------------------------------+
+    // |         |             |             |
+    // | address | hex view    | visual view |  }- data pane (scrollable)
+    // |         |             |             |
+    // +-------------------------------------+
+    // | menu & hints           progress bar | }- status bar
+    // +-------------------------------------+
 
     let mut tui = Cursive::default();
     tui.add_global_callback('q', quit);
     tui.add_global_callback(Key::Esc, quit);
     tui.add_global_callback('?', help);
     tui.add_global_callback(Key::F1, help);
+    tui.add_global_callback('d', toggle_visual);
 
     let hints_style = ColorStyle::new(
         ColorType::Palette(PaletteColor::Tertiary),
         ColorType::Palette(PaletteColor::Background));
     let hint_key_style = Style::none().combine(hints_style).combine(Effect::Underline);
 
-    let data_pane = HexView::new(reader);
+    let data_pane = HexView::new(reader).with_id("hex_view");
 
     let mut hints_bar_string = StyledString::new();
     hints_bar_string.append_styled("Q", hint_key_style);
@@ -124,4 +125,10 @@ fn quit(s: &mut Cursive) {
 
 fn help(s: &mut Cursive) {
     s.add_layer(Dialog::info("Helpful text\n\nbla bla bla..."))
+}
+
+fn toggle_visual(s: &mut Cursive) {
+    s.call_on_id("hex_view", |view: &mut HexView| {
+        view.toggle_visual()
+    });
 }
