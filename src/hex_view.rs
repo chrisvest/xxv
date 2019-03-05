@@ -18,9 +18,12 @@ pub struct HexView {
     invalidated_resize: bool,
     invalidated_data_changed: bool,
     show_visual_view: bool,
-    offsets_column_width: usize,
-    hex_column_width: usize,
-    data_column_width: usize,
+    offsets_column_pos: Vec2,
+    offsets_column_size: Vec2,
+    hex_column_pos: Vec2,
+    hex_column_size: Vec2,
+    visual_column_pos: Vec2,
+    visual_column_size: Vec2,
     last_drawn_window: Window
 }
 
@@ -32,15 +35,19 @@ impl HexView {
             invalidated_resize: true,
             invalidated_data_changed: true,
             show_visual_view: true,
-            offsets_column_width: 0,
-            hex_column_width: 0,
-            data_column_width: 0,
+            offsets_column_pos: Vec2::new(0, 0),
+            offsets_column_size: Vec2::new(0, 0),
+            hex_column_pos: Vec2::new(0, 0),
+            hex_column_size: Vec2::new(0, 0),
+            visual_column_pos: Vec2::new(0, 0),
+            visual_column_size: Vec2::new(0, 0),
             last_drawn_window: (0, 0, 0, 0)
         }
     }
     
     pub fn toggle_visual(&mut self) {
         self.show_visual_view = !self.show_visual_view;
+        self.invalidated_resize = true;
     }
 
     fn on_key_event(&mut self, key: Key) -> EventResult {
@@ -169,34 +176,30 @@ impl View for HexView {
         printer.print_box((0, 0), printer.size, true);
         self.draw_title(printer);
         
-        let offset_column_width = self.reader.get_row_offsets_width();
         let mut offset_printer = OffsetPrinter {
-            pos: Vec2::new(1, 1),
-            printer
+            pos: Vec2::new(0, 0),
+            printer: &printer.offset(self.offsets_column_pos).cropped(self.offsets_column_size)
         };
         self.reader.visit_row_offsets(&mut offset_printer);
         
-        let border_offset = offset_column_width + 1;
-        printer.print_vline(Vec2::new(border_offset, 1), printer.size.y - 2, "│");
+        let inner_height = self.offsets_column_size.y;
+        let border_offset = self.offsets_column_size.x + self.offsets_column_pos.x;
+        printer.print_vline(Vec2::new(border_offset, 1), inner_height, "│");
         
-        let hex_column_offset = border_offset + 2;
         let mut hex_printer = HexPrinter {
             max_width: 0,
             pos: Vec2::new(0, 0),
-            printer: &printer.offset((hex_column_offset,1)).shrinked((0,1))
+            printer: &printer.offset(self.hex_column_pos).cropped(self.hex_column_size)
         };
         self.reader.visit_hex(&mut hex_printer);
 
         if self.show_visual_view {
-            let border_offset = hex_printer.max_width + 1 + hex_column_offset;
-            printer.print_vline(Vec2::new(border_offset, 1), printer.size.y - 2, "│");
+            let border_offset = self.hex_column_pos.x + self.hex_column_size.x;
+            printer.print_vline(Vec2::new(border_offset, 1), inner_height, "│");
             
-            let visual_column_offset = border_offset + 2;
-            let p = printer.offset((visual_column_offset, 1)).shrinked((1, 1));
-
             let mut visual_printer = VisualPrinter {
                 pos: Vec2::new(0,0),
-                printer: &p
+                printer: &printer.offset(self.visual_column_pos).cropped(self.visual_column_size)
             };
             self.reader.visit_visual(&mut visual_printer);
         }
@@ -205,64 +208,111 @@ impl View for HexView {
     fn layout(&mut self, constraint: Vec2) {
         if self.invalidated_resize {
             // The viewing area changed size, or the visual column was toggled.
-            let offsets_colunm = self.reader.get_row_offsets_width();
-            // Borders: 1) left edge, 2) offset column to hex, 3) hex to data, 4) right edge.
-            let borders = 4;
-            // Spaces: 2 on the inside of the hex column. If we show the visual column, 2 on the
-            // inside of the visual column as well. 
-            let spaces = 2 + (if self.show_visual_view { 2 } else { 0 });
-            // Area available for data, after we've taking all the visual elements into account.
-            let available_width = (constraint.x - offsets_colunm - borders - spaces) as isize;
+
+            // The available height inside the box border:
+            let inner_height = constraint.y - 2;
+
+            let colw_offsets = self.reader.get_row_offsets_width();
+            self.offsets_column_pos = Vec2::new(1, 1);
+            self.offsets_column_size = Vec2::new(colw_offsets, inner_height);
+            
+            // Box-border, offsets column, separator line + space line:
+            let hex_col_start = 1 + colw_offsets + 2;
+            self.hex_column_pos = Vec2::new(hex_col_start, 1);
+            self.hex_column_size = Vec2::new(constraint.x - hex_col_start - 1, inner_height);
             
             if self.show_visual_view {
-                // todo
-            } else {
-                // We are not showing the visual column, so the available data can be dedicated to
-                // the hex column.
-                // In the hex column, every group takes up 3 characters. Every byte takes up 2
-                // characters. And between every pair of bytes not separated by a group, there is
-                // a space taking up one character.
+                // Split the hex column into a smaller hex column, and a visual view.
+                // We also reserve 3 characters of width for the spacer line between the two
+                // columns.
+                // The number of bytes that we display in the hex column should ideally be
+                // reflected in the visual column.
+                // Every byte in the hex view takes up 2 characters. Every pair of bytes take up
+                // an additional 1 character space. There is an additional 2 characters, for a
+                // total of 3 characters, taken up for the group spacer between byte pairs where
+                // each byte is in a different group.
+                // In the visual view, each byte take up (probably) one character, and group
+                // separators also take up one character.
+                // We compute how much space each column needs by iterating the remaining bytes in
+                // the HexReader line, reducing the avail_width at each step, until we run out of
+                // space. Then we count how many bytes that took, and how much space ended up being
+                // taken by each column.
+                // Note that we can use get_bytes_left_in_line because even though the HexReader
+                // window size might change, we will not change the position.
+                let avail_width = self.hex_column_size.x - 3;
+                let mut space_left = avail_width as isize;
+                let mut hex_width = 0;
+                let mut vis_width = 0;
+                let mut bytes_consumed = 0;
+                let mut first_byte = true;
                 let group = self.reader.group as u64;
                 let bytes_left_in_line = self.reader.get_bytes_left_in_line();
-                let (wx,wy) = self.reader.window_pos;
-                let mut space_left = available_width;
-                let mut bytes_fitted = 0;
+                let (reader_window_pos_x, _) = self.reader.window_pos;
+
                 for i in 0..bytes_left_in_line {
-                    if space_left != available_width {
-                        // We are not the first byte, so we subtract 1 for the space between bytes.
+                    // Eagerly consume bytes so we draw right up to the border edges.
+                    bytes_consumed += 1;
+                    let last_byte = i == bytes_left_in_line - 1;
+                    
+                    if !first_byte && !last_byte {
+                        // Subtract 1 for the space between byte pairs.
                         space_left -= 1;
+                        hex_width += 1;
                     }
-                    if ((wx + i) % group) == 0 {
-                        // There is a group separator here. Subtract another 2.
-                        space_left -= 2;
+                    first_byte = false;
+                    
+                    if ((reader_window_pos_x + i) % group) == 0 && !last_byte {
+                        // There is a group separator here.
+                        // Subtract another 3 for the group separators.
+                        space_left -= 3;
+                        hex_width += 2;
+                        vis_width += 1;
                     }
-                    // Finally subtract 2 for the byte itself.
-                    space_left -= 2;
-                    if space_left > 0 {
-                        bytes_fitted += 1;
-                    } else {
+                    
+                    // Finally subtract space for actually displaying the byte.
+                    space_left -= 3;
+                    hex_width += 2;
+                    vis_width += 1;
+                    if space_left < 0 {
                         break;
                     }
                 }
-                // Now bytes fitted is the number of bytes we can display.
-                let new_window_size = (bytes_fitted, constraint.y as u16);
-                self.invalidated_data_changed = new_window_size != self.reader.window_size;
-                self.reader.window_size = new_window_size;
+                
+                // The sizes we computed might be slightly too large, so we truncate the views to
+                // fit our constraints.
+                if hex_width + vis_width > avail_width {
+                    let oversize = (hex_width + vis_width) - avail_width;
+                    let (hex_subtract, vis_subtract) = match oversize {
+                        1 => (1, 0),
+                        2 => (2, 0),
+                        3 => (2, 1),
+                        4 => (3, 1),
+                        5 => (4, 1),
+                        6 => (4, 2),
+                        7 => (5, 2),
+                        _ => (oversize / 2, oversize / 3) // Should never happen, I think?
+                    };
+                    eprintln!("oversize = {:?}", oversize);
+                    hex_width -= hex_subtract;
+                    vis_width -= vis_subtract;
+                }
+                
+                self.hex_column_size = Vec2::new(hex_width, inner_height);
+                self.visual_column_pos = Vec2::new(hex_col_start + hex_width + 2, 1);
+                self.visual_column_size = Vec2::new(vis_width, inner_height);
+                
+                let (reader_window_width, _) = self.reader.window_size;
+                if bytes_consumed > reader_window_width || self.invalidated_data_changed {
+                    self.reader.window_size = (bytes_consumed, inner_height as u16);
+                    self.reader.capture().unwrap();
+                    self.invalidated_data_changed = false;
+                }
+            } else {
+                // We are not showing the visual column, so all space will be dedicated to the
+                // hex column. This has already been computed, but we don't yet know how many bytes
+                // are needed to fill up that space. So we need to compute that.
+                // todo
             }
-
-//            let visual_data_width = if self.show_data_view {
-//                self.reader.get_visual_data_width()
-//            } else {
-//                VisualColumnWidth::Fixed(0)
-//            };
-//
-//            // The hex column takes up 3 characters for every 1 character in the data column.
-//            let hex_colunm = (available_width / 4) * 3;
-//            let data_column = (available_width / 4) * 1;
-//            let width = borders + offsets_colunm + hex_colunm + data_column;
-//            self.offsets_column_width = offsets_colunm;
-//            self.hex_column_width = hex_colunm;
-//            self.data_column_width = data_column;
             self.invalidated_resize = false;
         }
         if self.invalidated_data_changed {
