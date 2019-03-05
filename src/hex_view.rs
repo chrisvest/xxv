@@ -61,7 +61,7 @@ impl HexView {
             p.print((offset - 2, 0), "┤ ");
             p.print((offset + len, 0), " ├");
         });
-        
+
         printer.with_color(ColorStyle::title_primary(), |p| {
             if len < title.len() {
                 p.print((offset, 0), &title[0..len]);
@@ -92,7 +92,6 @@ impl<'a, 'b, 'x> OffsetsVisitor for OffsetPrinter<'a, 'b, 'x> {
 }
 
 struct HexPrinter<'a, 'b, 'x> {
-    initial_offset: usize,
     max_width: usize,
     pos: Vec2,
     printer: &'x Printer<'a, 'b>
@@ -100,7 +99,7 @@ struct HexPrinter<'a, 'b, 'x> {
 
 impl<'a, 'b, 'x> HexVisitor for HexPrinter<'a, 'b, 'x> {
     fn byte(&mut self, byte: &str, category: &ByteCategory) {
-        if self.pos.x != self.initial_offset {
+        if self.pos.x != 0 {
             self.pos.x += 1;
         }
         let color = category_to_color(category);
@@ -119,7 +118,7 @@ impl<'a, 'b, 'x> HexVisitor for HexPrinter<'a, 'b, 'x> {
     fn next_line(&mut self) {
         self.pos.y += 1;
         self.max_width = self.max_width.max(self.pos.x);
-        self.pos.x = self.initial_offset;
+        self.pos.x = 0;
     }
 
     fn end(&mut self) {
@@ -128,7 +127,6 @@ impl<'a, 'b, 'x> HexVisitor for HexPrinter<'a, 'b, 'x> {
 }
 
 struct VisualPrinter<'a, 'b, 'x> {
-    initial_offset: usize,
     pos: Vec2,
     printer: &'x Printer<'a, 'b>
 }
@@ -149,7 +147,7 @@ impl<'a, 'b, 'x> VisualVisitor for VisualPrinter<'a, 'b, 'x> {
 
     fn next_line(&mut self) {
         self.pos.y += 1;
-        self.pos.x = self.initial_offset;
+        self.pos.x = 0;
     }
 
     fn end(&mut self) {
@@ -183,22 +181,22 @@ impl View for HexView {
         
         let hex_column_offset = border_offset + 2;
         let mut hex_printer = HexPrinter {
-            initial_offset: hex_column_offset,
             max_width: 0,
-            pos: Vec2::new(hex_column_offset, 1),
-            printer
+            pos: Vec2::new(0, 0),
+            printer: &printer.offset((hex_column_offset,1)).shrinked((0,1))
         };
         self.reader.visit_hex(&mut hex_printer);
 
         if self.show_visual_view {
-            let border_offset = hex_printer.max_width + 1;
+            let border_offset = hex_printer.max_width + 1 + hex_column_offset;
             printer.print_vline(Vec2::new(border_offset, 1), printer.size.y - 2, "│");
             
             let visual_column_offset = border_offset + 2;
+            let p = printer.offset((visual_column_offset, 1)).shrinked((1, 1));
+
             let mut visual_printer = VisualPrinter {
-                initial_offset: visual_column_offset,
-                pos: Vec2::new(visual_column_offset, 1),
-                printer
+                pos: Vec2::new(0,0),
+                printer: &p
             };
             self.reader.visit_visual(&mut visual_printer);
         }

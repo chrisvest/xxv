@@ -9,14 +9,6 @@ use crate::hex_reader::{HexReader, HexVisitor};
 use crate::hex_view::HexView;
 
 pub fn run_tui(reader: HexReader) {
-    // +-------------------------------------+
-    // |         |             |             |
-    // | address | hex view    | visual view |  }- data pane (scrollable)
-    // |         |             |             |
-    // +-------------------------------------+
-    // | menu & hints           progress bar | }- status bar
-    // +-------------------------------------+
-
     let mut tui = Cursive::default();
     tui.add_global_callback('q', quit);
     tui.add_global_callback(Key::Esc, quit);
