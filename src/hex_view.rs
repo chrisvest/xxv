@@ -1,8 +1,7 @@
-use crate::hex_reader::{HexReader, VisualVisitor, VisualColumnWidth};
+use crate::hex_reader::{HexReader, VisualVisitor};
 use cursive::traits::View;
 use cursive::Printer;
-use cursive::event::Event;
-use cursive::event::Key;
+use cursive::event::{Event, Key};
 use cursive::event::EventResult;
 use cursive::Vec2;
 use crate::byte_reader::Window;
@@ -49,9 +48,42 @@ impl HexView {
         self.show_visual_view = !self.show_visual_view;
         self.invalidated_resize = true;
     }
-
-    fn on_key_event(&mut self, key: Key) -> EventResult {
-        EventResult::Ignored
+    
+    fn on_char_event(&mut self, c: char) -> EventResult {
+        match c {
+            'j' => self.on_key_event(Key::Down),
+            'k' => self.on_key_event(Key::Up),
+            _ => EventResult::Ignored
+        }
+    }
+    
+    fn on_key_event(&mut self, k: Key) -> EventResult {
+        let offset = match k {
+            Key::Down => (0, 1),
+            Key::Up => if self.reader.window_pos.1 > 0 { (0, -1) } else { (0, 0) },
+            _ => (0, 0)
+        };
+        self.navigate(offset)
+    }
+    
+    fn navigate(&mut self, offset: (i16, i16)) -> EventResult {
+        if offset != (0, 0) {
+            let (x, y) = offset;
+            if x < 0 {
+                self.reader.window_pos.0 -= (x * -1) as u64;
+            } else {
+                self.reader.window_pos.0 += x as u64;
+            }
+            if y < 0 {
+                self.reader.window_pos.1 -= (y * -1) as u64;
+            } else {
+                self.reader.window_pos.1 += y as u64;
+            }
+            self.invalidated_data_changed = true;
+            EventResult::Consumed(None)
+        } else {
+            EventResult::Ignored
+        }
     }
     
     fn draw_title(&self, printer: &Printer) {
@@ -211,6 +243,10 @@ impl View for HexView {
 
             // The available height inside the box border:
             let inner_height = constraint.y - 2;
+            if self.reader.window_size.1 != (inner_height as u16) {
+                self.reader.window_size.1 = inner_height as u16;
+                self.invalidated_data_changed = true;
+            }
 
             let colw_offsets = self.reader.get_row_offsets_width();
             self.offsets_column_pos = Vec2::new(1, 1);
@@ -239,19 +275,16 @@ impl View for HexView {
                 // taken by each column.
                 // Note that we can use get_bytes_left_in_line because even though the HexReader
                 // window size might change, we will not change the position.
-                let avail_width = self.hex_column_size.x - 3;
+                let avail_width = self.hex_column_size.x - 2;
                 let mut space_left = avail_width as isize;
                 let mut hex_width = 0;
                 let mut vis_width = 0;
-                let mut bytes_consumed = 0;
                 let mut first_byte = true;
                 let group = self.reader.group as u64;
                 let bytes_left_in_line = self.reader.get_bytes_left_in_line();
-                let (reader_window_pos_x, _) = self.reader.window_pos;
+                let reader_window_pos_x = self.reader.window_pos.0;
 
                 for i in 0..bytes_left_in_line {
-                    // Eagerly consume bytes so we draw right up to the border edges.
-                    bytes_consumed += 1;
                     let last_byte = i == bytes_left_in_line - 1;
                     
                     if !first_byte && !last_byte {
@@ -282,42 +315,18 @@ impl View for HexView {
                 // fit our constraints.
                 if hex_width + vis_width > avail_width {
                     let oversize = (hex_width + vis_width) - avail_width;
-                    let (hex_subtract, vis_subtract) = match oversize {
-                        1 => (1, 0),
-                        2 => (2, 0),
-                        3 => (2, 1),
-                        4 => (3, 1),
-                        5 => (4, 1),
-                        6 => (4, 2),
-                        7 => (5, 2),
-                        _ => (oversize / 2, oversize / 3) // Should never happen, I think?
-                    };
-                    eprintln!("oversize = {:?}", oversize);
-                    hex_width -= hex_subtract;
-                    vis_width -= vis_subtract;
+                    hex_width -= oversize;
                 }
                 
                 self.hex_column_size = Vec2::new(hex_width, inner_height);
                 self.visual_column_pos = Vec2::new(hex_col_start + hex_width + 2, 1);
                 self.visual_column_size = Vec2::new(vis_width, inner_height);
-                
-                let (reader_window_width, _) = self.reader.window_size;
-                if bytes_consumed > reader_window_width || self.invalidated_data_changed {
-                    self.reader.window_size = (bytes_consumed, inner_height as u16);
-                    self.reader.capture().unwrap();
-                    self.invalidated_data_changed = false;
-                }
-            } else {
-                // We are not showing the visual column, so all space will be dedicated to the
-                // hex column. This has already been computed, but we don't yet know how many bytes
-                // are needed to fill up that space. So we need to compute that.
-                // todo
             }
             self.invalidated_resize = false;
         }
         if self.invalidated_data_changed {
             // The viewing area was moved.
-            self.reader.capture();
+            self.reader.capture().unwrap();
             self.invalidated_data_changed = false;
         }
     }
@@ -332,6 +341,7 @@ impl View for HexView {
                 self.invalidated_resize = true;
                 EventResult::Consumed(None)
             },
+            Event::Char(c) => self.on_char_event(c),
             Event::Key(k) => self.on_key_event(k),
             _ => EventResult::Ignored
         }
