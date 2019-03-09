@@ -264,7 +264,11 @@ impl View for HexView {
     fn needs_relayout(&self) -> bool {
         self.invalidated_resize || self.invalidated_data_changed
     }
-    
+
+    fn required_size(&mut self, constraint: Vec2) -> Vec2 {
+        constraint // Always take up all the space we can get.
+    }
+
     fn on_event(&mut self, event: Event) -> EventResult {
         match event {
             Event::WindowResize => {
@@ -275,10 +279,6 @@ impl View for HexView {
             Event::Key(k) => self.on_key_event(k),
             _ => EventResult::Ignored
         }
-    }
-
-    fn required_size(&mut self, constraint: Vec2) -> Vec2 {
-        constraint // Always take up all the space we can get.
     }
 }
 
