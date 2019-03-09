@@ -53,14 +53,29 @@ impl HexView {
         match c {
             'j' => self.on_key_event(Key::Down),
             'k' => self.on_key_event(Key::Up),
+            'h' => self.on_key_event(Key::Left),
+            'l' => self.on_key_event(Key::Right),
             _ => EventResult::Ignored
         }
     }
     
     fn on_key_event(&mut self, k: Key) -> EventResult {
+        let inner_height = self.offsets_column_size.y as i16;
+        let (pos_x, pos_y) = self.reader.window_pos;
+        let (size_x, size_y) = self.reader.window_size;
         let offset = match k {
             Key::Down => (0, 1),
-            Key::Up => if self.reader.window_pos.1 > 0 { (0, -1) } else { (0, 0) },
+            Key::Up => if pos_y > 0 { (0, -1) } else { (0, 0) },
+            Key::Left => if pos_x > 0 { (-1, 0) } else { (0, 0) }
+            Key::Right => if pos_x + (size_x as u64) < self.reader.line_length { (1, 0) } else { (0, 0) },
+            Key::PageDown => (0, inner_height),
+            Key::PageUp => if pos_y > inner_height as u64 {
+                (0, -inner_height)
+            } else if pos_y > 0 {
+                (0, -(pos_y as i16))
+            } else {
+                (0, 0)
+            }
             _ => (0, 0)
         };
         self.navigate(offset)
@@ -70,12 +85,12 @@ impl HexView {
         if offset != (0, 0) {
             let (x, y) = offset;
             if x < 0 {
-                self.reader.window_pos.0 -= (x * -1) as u64;
+                self.reader.window_pos.0 -= (-x) as u64;
             } else {
                 self.reader.window_pos.0 += x as u64;
             }
             if y < 0 {
-                self.reader.window_pos.1 -= (y * -1) as u64;
+                self.reader.window_pos.1 -= (-y) as u64;
             } else {
                 self.reader.window_pos.1 += y as u64;
             }
@@ -109,97 +124,6 @@ impl HexView {
                 p.print((offset, 0), title);
             }
         });
-    }
-}
-
-struct OffsetPrinter<'a, 'b, 'x> {
-    pos: Vec2,
-    printer: &'x Printer<'a, 'b>
-}
-
-impl<'a, 'b, 'x> OffsetsVisitor for OffsetPrinter<'a, 'b, 'x> {
-    fn offset(&mut self, offset: &str) {
-        self.printer.with_color(ColorStyle::secondary(), |p| {
-            p.print(self.pos, offset);
-        });
-        self.pos.y += 1;
-    }
-
-    fn end(&mut self) {
-        // Nothing to do.
-    }
-}
-
-struct HexPrinter<'a, 'b, 'x> {
-    max_width: usize,
-    pos: Vec2,
-    printer: &'x Printer<'a, 'b>
-}
-
-impl<'a, 'b, 'x> HexVisitor for HexPrinter<'a, 'b, 'x> {
-    fn byte(&mut self, byte: &str, category: &ByteCategory) {
-        if self.pos.x != 0 {
-            self.pos.x += 1;
-        }
-        let color = category_to_color(category);
-        self.printer.with_color(color, |p| {
-            p.print(self.pos, byte);
-        });
-        self.pos.x += 2;
-    }
-
-    fn group(&mut self) {
-        self.pos.x += 1;
-        self.printer.print(self.pos, "┊");
-        self.pos.x += 1;
-    }
-
-    fn next_line(&mut self) {
-        self.pos.y += 1;
-        self.max_width = self.max_width.max(self.pos.x);
-        self.pos.x = 0;
-    }
-
-    fn end(&mut self) {
-        self.max_width = self.max_width.max(self.pos.x);
-    }
-}
-
-struct VisualPrinter<'a, 'b, 'x> {
-    pos: Vec2,
-    printer: &'x Printer<'a, 'b>
-}
-
-impl<'a, 'b, 'x> VisualVisitor for VisualPrinter<'a, 'b, 'x> {
-    fn visual_element(&mut self, element: &str, category: &ByteCategory) {
-        let color = category_to_color(category);
-        self.printer.with_color(color, |p| {
-            p.print(self.pos, element);
-        });
-        self.pos.x += element.width();
-    }
-
-    fn group(&mut self) {
-        self.printer.print(self.pos, "┊");
-        self.pos.x += 1;
-    }
-
-    fn next_line(&mut self) {
-        self.pos.y += 1;
-        self.pos.x = 0;
-    }
-
-    fn end(&mut self) {
-        // Nothing to do.
-    }
-}
-
-fn category_to_color(category: &ByteCategory) -> ColorStyle {
-    match category {
-        ByteCategory::AsciiControl => ColorStyle::title_primary(),
-        ByteCategory::AsciiPrintable => ColorStyle::primary(),
-        ByteCategory::AsciiWhitespace => ColorStyle::secondary(),
-        ByteCategory::Other => ColorStyle::title_secondary()
     }
 }
 
@@ -256,76 +180,60 @@ impl View for HexView {
             let hex_col_start = 1 + colw_offsets + 2;
             self.hex_column_pos = Vec2::new(hex_col_start, 1);
             self.hex_column_size = Vec2::new(constraint.x - hex_col_start - 1, inner_height);
-            
-            if self.show_visual_view {
-                // Split the hex column into a smaller hex column, and a visual view.
-                // We also reserve 3 characters of width for the spacer line between the two
-                // columns.
-                // The number of bytes that we display in the hex column should ideally be
-                // reflected in the visual column.
-                // Every byte in the hex view takes up 2 characters. Every pair of bytes take up
-                // an additional 1 character space. There is an additional 2 characters, for a
-                // total of 3 characters, taken up for the group spacer between byte pairs where
-                // each byte is in a different group.
-                // In the visual view, each byte take up (probably) one character, and group
-                // separators also take up one character.
-                // We compute how much space each column needs by iterating the remaining bytes in
-                // the HexReader line, reducing the avail_width at each step, until we run out of
-                // space. Then we count how many bytes that took, and how much space ended up being
-                // taken by each column.
-                // Note that we can use get_bytes_left_in_line because even though the HexReader
-                // window size might change, we will not change the position.
-                let avail_width = self.hex_column_size.x - 2;
-                let mut space_left = avail_width as isize;
-                let mut hex_width = 0;
-                let mut vis_width = 0;
-                let mut first_byte = true;
-                let group = self.reader.group as u64;
-                let bytes_left_in_line = self.reader.get_bytes_left_in_line();
-                let reader_window_pos_x = self.reader.window_pos.0;
 
-                for i in 0..bytes_left_in_line {
-                    let last_byte = i == bytes_left_in_line - 1;
+            let reader_pos_x = self.reader.window_pos.0;
+            let group = self.reader.group as u64;
+            let vis_group_spacer: usize = if self.show_visual_view { 1 } else { 0 };
+            let vis_byte_width: usize = if self.show_visual_view { 1 } else { 0 };
+            
+            let avail_width = self.hex_column_size.x;
+            let mut space_left = avail_width as isize;
+            let mut hex_width: usize = 0;
+            let mut vis_width: usize = 0;
+            let mut bytes_consumed = 0;
+            let bytes_left_in_line = self.reader.get_bytes_left_in_line();
+
+            for i in 0..bytes_left_in_line {
+                let byte_pair_spacer = if i == 0 { 0 } else { 1 };
+                let consumed_by_byte = byte_pair_spacer + 2 + vis_byte_width as isize;
+                if space_left - consumed_by_byte >= 0 {
+                    space_left -= consumed_by_byte;
+                    hex_width += 2 + byte_pair_spacer as usize;
+                    vis_width += vis_byte_width;
+                    bytes_consumed += 1;
                     
-                    if !first_byte && !last_byte {
-                        // Subtract 1 for the space between byte pairs.
-                        space_left -= 1;
-                        hex_width += 1;
+                    if ((reader_pos_x + i) % group) == 0 && i != 0 {
+                        // The hex column group spacer replaces the byte pair spacer automatically.
+                        let consumed_by_group = vis_group_spacer as isize;
+                        if space_left - consumed_by_group > 0 {
+                            space_left -= consumed_by_group;
+                            vis_width += vis_group_spacer;
+                        } else {
+                            break;
+                        }
                     }
-                    first_byte = false;
-                    
-                    if ((reader_window_pos_x + i) % group) == 0 && !last_byte {
-                        // There is a group separator here.
-                        // Subtract another 3 for the group separators.
-                        space_left -= 3;
-                        hex_width += 2;
-                        vis_width += 1;
-                    }
-                    
-                    // Finally subtract space for actually displaying the byte.
-                    space_left -= 3;
-                    hex_width += 2;
-                    vis_width += 1;
-                    if space_left < 0 {
-                        break;
-                    }
+                } else {
+                    break;
                 }
-                
-                // The sizes we computed might be slightly too large, so we truncate the views to
-                // fit our constraints.
-                if hex_width + vis_width > avail_width {
-                    let oversize = (hex_width + vis_width) - avail_width;
-                    hex_width -= oversize;
-                }
-                
-                self.hex_column_size = Vec2::new(hex_width, inner_height);
-                self.visual_column_pos = Vec2::new(hex_col_start + hex_width + 2, 1);
-                self.visual_column_size = Vec2::new(vis_width, inner_height);
             }
+            
+            if hex_width + vis_width + 1 < avail_width {
+                // Add right padding to hex column.
+                hex_width += 1;
+            } else if hex_width + vis_width == avail_width {
+                // Remove the left hex column padding to squeeze in the last byte.
+                self.hex_column_pos.x -= 1;
+            }
+            
+            self.hex_column_size = Vec2::new(hex_width, inner_height);
+            self.visual_column_pos = Vec2::new(self.hex_column_pos.x + hex_width + 1, 1);
+            self.visual_column_size = Vec2::new(vis_width, inner_height);
+            
             self.invalidated_resize = false;
         }
+
         if self.invalidated_data_changed {
-            // The viewing area was moved.
+            // The viewing area was moved or changed size.
             self.reader.capture().unwrap();
             self.invalidated_data_changed = false;
         }
@@ -349,5 +257,206 @@ impl View for HexView {
 
     fn required_size(&mut self, constraint: Vec2) -> Vec2 {
         constraint // Always take up all the space we can get.
+    }
+}
+
+struct OffsetPrinter<'a, 'b, 'x> {
+    pos: Vec2,
+    printer: &'x Printer<'a, 'b>
+}
+
+impl<'a, 'b, 'x> OffsetsVisitor for OffsetPrinter<'a, 'b, 'x> {
+    fn offset(&mut self, offset: &str) {
+        self.printer.with_color(ColorStyle::secondary(), |p| {
+            p.print(self.pos, offset);
+        });
+        self.pos.y += 1;
+    }
+
+    fn end(&mut self) {
+        // Nothing to do.
+    }
+}
+
+struct HexPrinter<'a, 'b, 'x> {
+    max_width: usize,
+    pos: Vec2,
+    printer: &'x Printer<'a, 'b>
+}
+
+impl<'a, 'b, 'x> HexVisitor for HexPrinter<'a, 'b, 'x> {
+    fn byte(&mut self, byte: &str, category: &ByteCategory) {
+        if self.pos.x != 0 {
+            self.pos.x += 1;
+        }
+        let color = category_to_color(category);
+        self.printer.with_color(color, |p| {
+            p.print(self.pos, byte);
+        });
+        self.pos.x += 2;
+    }
+
+    fn group(&mut self) {
+        self.printer.print(self.pos, "┊");
+    }
+
+    fn next_line(&mut self) {
+        self.pos.y += 1;
+        self.max_width = self.max_width.max(self.pos.x);
+        self.pos.x = 0;
+    }
+
+    fn end(&mut self) {
+        self.max_width = self.max_width.max(self.pos.x);
+    }
+}
+
+struct VisualPrinter<'a, 'b, 'x> {
+    pos: Vec2,
+    printer: &'x Printer<'a, 'b>
+}
+
+impl<'a, 'b, 'x> VisualVisitor for VisualPrinter<'a, 'b, 'x> {
+    fn visual_element(&mut self, element: &str, category: &ByteCategory) {
+        let color = category_to_color(category);
+        self.printer.with_color(color, |p| {
+            p.print(self.pos, element);
+        });
+        self.pos.x += element.width();
+    }
+
+    fn group(&mut self) {
+        self.printer.print(self.pos, "┊");
+        self.pos.x += 1;
+    }
+
+    fn next_line(&mut self) {
+        self.pos.y += 1;
+        self.pos.x = 0;
+    }
+
+    fn end(&mut self) {
+        // Nothing to do.
+    }
+}
+
+fn category_to_color(category: &ByteCategory) -> ColorStyle {
+    match category {
+        ByteCategory::AsciiControl => ColorStyle::title_primary(),
+        ByteCategory::AsciiPrintable => ColorStyle::primary(),
+        ByteCategory::AsciiWhitespace => ColorStyle::secondary(),
+        ByteCategory::Other => ColorStyle::title_secondary()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+    use crate::byte_reader::TilingByteReader;
+
+    #[test]
+    fn layout_w80_h24_ll16() {
+        let mut tmpf = tempfile::NamedTempFile::new().unwrap();
+        tmpf.write(b"0123456789abcdef0123456789abcdef").unwrap();
+
+        let byte_reader = TilingByteReader::new(tmpf.path()).unwrap();
+        let hex_reader = HexReader::new(byte_reader).unwrap();
+        let mut view = HexView::new(hex_reader);
+
+        let constraint = Vec2::new(80, 23);
+        view.layout(constraint);
+
+        assert_eq!(view.reader.line_length, 16);
+        assert_eq!(view.reader.window_pos, (0, 0));
+        assert_eq!(view.reader.window_size, (16, 21));
+
+        assert_eq!(view.offsets_column_pos, Vec2::new(1, 1));
+        assert_eq!(view.offsets_column_size, Vec2::new(10, 21));
+
+        assert_eq!(view.hex_column_pos, Vec2::new(13, 1));
+        assert_eq!(view.hex_column_size, Vec2::new(48, 21));
+        
+        assert_eq!(view.visual_column_pos, Vec2::new(62, 1));
+        assert_eq!(view.visual_column_size, Vec2::new(17, 21));
+    }
+
+    #[test]
+    fn layout_w79_h24_ll16() {
+        let mut tmpf = tempfile::NamedTempFile::new().unwrap();
+        tmpf.write(b"0123456789abcdef0123456789abcdef").unwrap();
+
+        let byte_reader = TilingByteReader::new(tmpf.path()).unwrap();
+        let hex_reader = HexReader::new(byte_reader).unwrap();
+        let mut view = HexView::new(hex_reader);
+
+        let constraint = Vec2::new(79, 23);
+        view.layout(constraint);
+
+        assert_eq!(view.reader.line_length, 16);
+        assert_eq!(view.reader.window_pos, (0, 0));
+        assert_eq!(view.reader.window_size, (16, 21));
+
+        assert_eq!(view.offsets_column_pos, Vec2::new(1, 1));
+        assert_eq!(view.offsets_column_size, Vec2::new(10, 21));
+
+        assert_eq!(view.hex_column_pos, Vec2::new(13, 1));
+        assert_eq!(view.hex_column_size, Vec2::new(47, 21));
+        
+        assert_eq!(view.visual_column_pos, Vec2::new(61, 1));
+        assert_eq!(view.visual_column_size, Vec2::new(17, 21));
+    }
+
+    #[test]
+    fn layout_w78_h24_ll16() {
+        let mut tmpf = tempfile::NamedTempFile::new().unwrap();
+        tmpf.write(b"0123456789abcdef0123456789abcdef").unwrap();
+
+        let byte_reader = TilingByteReader::new(tmpf.path()).unwrap();
+        let hex_reader = HexReader::new(byte_reader).unwrap();
+        let mut view = HexView::new(hex_reader);
+
+        let constraint = Vec2::new(78, 23);
+        view.layout(constraint);
+
+        assert_eq!(view.reader.line_length, 16);
+        assert_eq!(view.reader.window_pos, (0, 0));
+        assert_eq!(view.reader.window_size, (16, 21));
+
+        assert_eq!(view.offsets_column_pos, Vec2::new(1, 1));
+        assert_eq!(view.offsets_column_size, Vec2::new(10, 21));
+
+        assert_eq!(view.hex_column_pos, Vec2::new(12, 1));
+        assert_eq!(view.hex_column_size, Vec2::new(47, 21));
+        
+        assert_eq!(view.visual_column_pos, Vec2::new(60, 1));
+        assert_eq!(view.visual_column_size, Vec2::new(17, 21));
+    }
+
+    #[test]
+    fn layout_w80_h24_ll32() {
+        let mut tmpf = tempfile::NamedTempFile::new().unwrap();
+        tmpf.write(b"0123456789abcdef0123456789abcdef").unwrap();
+
+        let byte_reader = TilingByteReader::new(tmpf.path()).unwrap();
+        let hex_reader = HexReader::new(byte_reader).unwrap();
+        let mut view = HexView::new(hex_reader);
+
+        view.reader.line_length = 32;
+        let constraint = Vec2::new(80, 23);
+        view.layout(constraint);
+
+        assert_eq!(view.reader.line_length, 32);
+        assert_eq!(view.reader.window_pos, (0, 0));
+        assert_eq!(view.reader.window_size, (16, 21));
+
+        assert_eq!(view.offsets_column_pos, Vec2::new(1, 1));
+        assert_eq!(view.offsets_column_size, Vec2::new(10, 21));
+
+        assert_eq!(view.hex_column_pos, Vec2::new(13, 1));
+        assert_eq!(view.hex_column_size, Vec2::new(48, 21));
+        
+        assert_eq!(view.visual_column_pos, Vec2::new(62, 1));
+        assert_eq!(view.visual_column_size, Vec2::new(17, 21));
     }
 }

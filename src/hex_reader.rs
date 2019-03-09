@@ -272,7 +272,7 @@ impl HexReader {
             if i == w {
                 visitor.next_line();
                 i = 0;
-            } else if i % self.group == 0 {
+            } else if (x + i as u64) % self.group as u64 == 0 {
                 visitor.group();
             }
         }
@@ -293,7 +293,7 @@ impl HexReader {
             if i == w {
                 visitor.next_line();
                 i = 0;
-            } else if i % self.group == 0 {
+            } else if (x + i as u64) % self.group as u64 == 0 {
                 visitor.group();
             }
         }
