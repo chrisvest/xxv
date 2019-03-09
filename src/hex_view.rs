@@ -43,7 +43,7 @@ impl HexView {
         }
     }
     
-    pub fn toggle_visual(&mut self) {
+    fn toggle_visual(&mut self) -> EventResult {
         match self.visual {
             Visual::Unicode => {
                 self.visual = Visual::Ascii;
@@ -61,6 +61,7 @@ impl HexView {
                 self.invalidated_resize = true;
             }
         }
+        EventResult::Consumed(None)
     }
     
     fn on_char_event(&mut self, c: char) -> EventResult {
@@ -69,6 +70,7 @@ impl HexView {
             'k' => self.on_key_event(Key::Up),
             'h' => self.on_key_event(Key::Left),
             'l' => self.on_key_event(Key::Right),
+            'v' => self.toggle_visual(),
             _ => EventResult::Ignored
         }
     }
@@ -76,7 +78,7 @@ impl HexView {
     fn on_key_event(&mut self, k: Key) -> EventResult {
         let inner_height = self.offsets_column_size.y as i16;
         let (pos_x, pos_y) = self.reader.window_pos;
-        let (size_x, size_y) = self.reader.window_size;
+        let (size_x, _size_y) = self.reader.window_size;
         let offset = match k {
             Key::Down => (0, 1),
             Key::Up => if pos_y > 0 { (0, -1) } else { (0, 0) },
