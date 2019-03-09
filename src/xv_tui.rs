@@ -14,7 +14,7 @@ pub fn run_tui(reader: HexReader) {
     tui.add_global_callback(Key::Esc, quit);
     tui.add_global_callback('?', help);
     tui.add_global_callback(Key::F1, help);
-    tui.add_global_callback('d', toggle_visual);
+    tui.add_global_callback('v', toggle_visual);
 
     let hints_style = ColorStyle::new(
         ColorType::Palette(PaletteColor::Tertiary),
@@ -28,11 +28,10 @@ pub fn run_tui(reader: HexReader) {
     hints_bar_string.append_styled("uit   ", hints_style);
     hints_bar_string.append_styled("G", hint_key_style);
     hints_bar_string.append_styled("o to   ", hints_style);
-    hints_bar_string.append_styled("Navigate: ", hints_style);
-    hints_bar_string.append_styled("hjkl", hint_key_style);
-    hints_bar_string.append_styled("   ", hints_style);
-    hints_bar_string.append_styled("F", hint_key_style);
-    hints_bar_string.append_styled("ind   ", hints_style);
+    hints_bar_string.append_styled("V", hint_key_style);
+    hints_bar_string.append_styled("isual   ", hints_style);
+    hints_bar_string.append_styled("W", hint_key_style);
+    hints_bar_string.append_styled("idth   ", hints_style);
     hints_bar_string.append_styled("C", hint_key_style);
     hints_bar_string.append_styled("onfigure", hints_style);
 

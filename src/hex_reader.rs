@@ -30,23 +30,23 @@ const UNICODE_TEXT_TABLE: &'static [&'static str; 256] = &[
     "\u{FFFD}", "\u{FFFD}", "\u{FFFD}", "\u{FFFD}", "\u{FFFD}", "\u{FFFD}", "\u{FFFD}", "\u{FFFD}",
     "\u{FFFD}", "\u{FFFD}", "\u{FFFD}", "\u{FFFD}", "\u{FFFD}", "\u{FFFD}", "\u{FFFD}", "\u{FFFD}"];
 
-const ASCII_TEXT_TABLE: &str = concat!(
-    "................",
-    "................",
-    " !\"#$%&'()*+,-./",
-    "0123456789:;<=>?",
-    "@ABCDEFGHIJKLMNO",
-    "PQRSTUVWXYZ[\\]^_",
-    "`abcdefghijklmno",
-    "pqrstuvwxyz{|}~.",
-    "................",
-    "................",
-    "................",
-    "................",
-    "................",
-    "................",
-    "................",
-    "................",);
+const ASCII_TEXT_TABLE: &'static [&'static str; 256] = &[
+    ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".",
+    ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".",
+    " ", "!", "\"", "#", "$", "%", "&", "'", "(", ")", "*", "+", ",", "-", ".", "/",
+    "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ":", ";", "<", "=", ">", "?",
+    "@", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O",
+    "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "[", "\\", "]", "^", "_",
+    "`", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o",
+    "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "{", "|", "}", "~", ".",
+    ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".",
+    ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".",
+    ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".",
+    ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".",
+    ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".",
+    ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".",
+    ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".",
+    ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."];
 
 const BYTE_RENDER: &'static [&'static str; 256] = &[
     "00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "0a", "0b", "0c", "0d", "0e", "0f",
@@ -155,6 +155,11 @@ pub enum VisualColumnWidth {
     PerByte(usize)
 }
 
+pub enum VisualMode {
+    Unicode,
+    Ascii
+}
+
 pub trait OffsetsVisitor {
     fn offset(&mut self, offset: &str);
     
@@ -183,24 +188,24 @@ pub trait VisualVisitor {
 
 pub struct HexReader {
     reader: TilingByteReader,
-    offset: u64,
     pub line_length: u64,
     pub group: u16,
     pub window_pos: (u64,u64),
     pub window_size: (u16,u16),
     capture: Box<Vec<u8>>,
+    vis_mode: VisualMode
 }
 
 impl HexReader {
     pub fn new(reader: TilingByteReader) -> Result<HexReader> {
         Ok(HexReader {
             reader,
-            offset: 0,
             line_length: 16,
             group: 8,
             window_pos: (0,0),
             window_size: (16,32),
-            capture: Box::new(Vec::new())
+            capture: Box::new(Vec::new()),
+            vis_mode: VisualMode::Unicode
         })
     }
     
@@ -283,12 +288,13 @@ impl HexReader {
         let (x, y) = self.window_pos;
         let (w, h) = self.window_size;
         let cap = self.capture.as_slice();
+        let table = self.vis_table();
 
         let mut i = 0;
         for b in cap {
             i += 1;
             let r = b.clone() as usize;
-            visitor.visual_element(UNICODE_TEXT_TABLE[r], &BYTE_CATEGORY[r]);
+            visitor.visual_element(table[r], &BYTE_CATEGORY[r]);
 
             if i == w {
                 visitor.next_line();
@@ -298,6 +304,17 @@ impl HexReader {
             }
         }
         visitor.end();
+    }
+    
+    fn vis_table(&self) -> &'static [&'static str; 256] {
+        match self.vis_mode {
+            VisualMode::Unicode => UNICODE_TEXT_TABLE,
+            VisualMode::Ascii => ASCII_TEXT_TABLE
+        }
+    }
+    
+    pub fn set_visual_mode(&mut self, mode: VisualMode) {
+        self.vis_mode = mode;
     }
 }
 

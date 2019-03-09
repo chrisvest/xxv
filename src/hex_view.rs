@@ -1,10 +1,9 @@
-use crate::hex_reader::{HexReader, VisualVisitor};
+use crate::hex_reader::{HexReader, VisualVisitor, VisualMode};
 use cursive::traits::View;
 use cursive::Printer;
 use cursive::event::{Event, Key};
 use cursive::event::EventResult;
 use cursive::Vec2;
-use crate::byte_reader::Window;
 use cursive::align::HAlign;
 use cursive::theme::ColorStyle;
 use unicode_width::UnicodeWidthStr;
@@ -17,13 +16,13 @@ pub struct HexView {
     invalidated_resize: bool,
     invalidated_data_changed: bool,
     show_visual_view: bool,
+    visual: Visual,
     offsets_column_pos: Vec2,
     offsets_column_size: Vec2,
     hex_column_pos: Vec2,
     hex_column_size: Vec2,
     visual_column_pos: Vec2,
     visual_column_size: Vec2,
-    last_drawn_window: Window
 }
 
 impl HexView {
@@ -34,19 +33,34 @@ impl HexView {
             invalidated_resize: true,
             invalidated_data_changed: true,
             show_visual_view: true,
+            visual: Visual::Unicode,
             offsets_column_pos: Vec2::new(0, 0),
             offsets_column_size: Vec2::new(0, 0),
             hex_column_pos: Vec2::new(0, 0),
             hex_column_size: Vec2::new(0, 0),
             visual_column_pos: Vec2::new(0, 0),
             visual_column_size: Vec2::new(0, 0),
-            last_drawn_window: (0, 0, 0, 0)
         }
     }
     
     pub fn toggle_visual(&mut self) {
-        self.show_visual_view = !self.show_visual_view;
-        self.invalidated_resize = true;
+        match self.visual {
+            Visual::Unicode => {
+                self.visual = Visual::Ascii;
+                self.reader.set_visual_mode(VisualMode::Ascii);
+            },
+            Visual::Ascii => {
+                self.visual = Visual::Off;
+                self.show_visual_view = false;
+                self.invalidated_resize = true;
+            },
+            Visual::Off => {
+                self.visual = Visual::Unicode;
+                self.reader.set_visual_mode(VisualMode::Unicode);
+                self.show_visual_view = true;
+                self.invalidated_resize = true;
+            }
+        }
     }
     
     fn on_char_event(&mut self, c: char) -> EventResult {
@@ -264,6 +278,12 @@ impl View for HexView {
     fn required_size(&mut self, constraint: Vec2) -> Vec2 {
         constraint // Always take up all the space we can get.
     }
+}
+
+enum Visual {
+    Unicode,
+    Ascii,
+    Off
 }
 
 struct OffsetPrinter<'a, 'b, 'x> {
