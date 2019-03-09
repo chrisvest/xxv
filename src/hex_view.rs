@@ -94,6 +94,7 @@ impl HexView {
             } else {
                 self.reader.window_pos.1 += y as u64;
             }
+            self.invalidated_resize = true;
             self.invalidated_data_changed = true;
             EventResult::Consumed(None)
         } else {
@@ -228,6 +229,11 @@ impl View for HexView {
             self.hex_column_size = Vec2::new(hex_width, inner_height);
             self.visual_column_pos = Vec2::new(self.hex_column_pos.x + hex_width + 1, 1);
             self.visual_column_size = Vec2::new(vis_width, inner_height);
+            
+            if bytes_consumed != self.reader.window_size.0 {
+                self.reader.window_size.0 = bytes_consumed;
+                self.invalidated_data_changed = true;
+            }
             
             self.invalidated_resize = false;
         }
@@ -431,6 +437,59 @@ mod tests {
         
         assert_eq!(view.visual_column_pos, Vec2::new(60, 1));
         assert_eq!(view.visual_column_size, Vec2::new(17, 21));
+    }
+
+    #[test]
+    fn layout_w77_h24_ll16() {
+        let mut tmpf = tempfile::NamedTempFile::new().unwrap();
+        tmpf.write(b"0123456789abcdef0123456789abcdef").unwrap();
+
+        let byte_reader = TilingByteReader::new(tmpf.path()).unwrap();
+        let hex_reader = HexReader::new(byte_reader).unwrap();
+        let mut view = HexView::new(hex_reader);
+
+        let constraint = Vec2::new(77, 23);
+        view.layout(constraint);
+
+        assert_eq!(view.reader.line_length, 16);
+        assert_eq!(view.reader.window_pos, (0, 0));
+        assert_eq!(view.reader.window_size, (15, 21));
+
+        assert_eq!(view.offsets_column_pos, Vec2::new(1, 1));
+        assert_eq!(view.offsets_column_size, Vec2::new(10, 21));
+
+        assert_eq!(view.hex_column_pos, Vec2::new(13, 1));
+        assert_eq!(view.hex_column_size, Vec2::new(45, 21));
+        
+        assert_eq!(view.visual_column_pos, Vec2::new(59, 1));
+        assert_eq!(view.visual_column_size, Vec2::new(16, 21));
+    }
+
+    #[test]
+    fn layout_w77_h24_ll16_offset1() {
+        let mut tmpf = tempfile::NamedTempFile::new().unwrap();
+        tmpf.write(b"0123456789abcdef0123456789abcdef").unwrap();
+
+        let byte_reader = TilingByteReader::new(tmpf.path()).unwrap();
+        let hex_reader = HexReader::new(byte_reader).unwrap();
+        let mut view = HexView::new(hex_reader);
+
+        let constraint = Vec2::new(77, 23);
+        view.reader.window_pos = (1, 0);
+        view.layout(constraint);
+
+        assert_eq!(view.reader.line_length, 16);
+        assert_eq!(view.reader.window_pos, (1, 0));
+        assert_eq!(view.reader.window_size, (15, 21));
+
+        assert_eq!(view.offsets_column_pos, Vec2::new(1, 1));
+        assert_eq!(view.offsets_column_size, Vec2::new(10, 21));
+
+        assert_eq!(view.hex_column_pos, Vec2::new(13, 1));
+        assert_eq!(view.hex_column_size, Vec2::new(45, 21));
+        
+        assert_eq!(view.visual_column_pos, Vec2::new(59, 1));
+        assert_eq!(view.visual_column_size, Vec2::new(16, 21));
     }
 
     #[test]
