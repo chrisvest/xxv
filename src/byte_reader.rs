@@ -47,7 +47,7 @@ pub type Window = (u64, u64, u16, u16);
 impl TilingByteReader {
     pub fn new<P: AsRef<Path>>(file_name: P) -> Result<TilingByteReader> {
         let display_name: String = file_name.as_ref().file_name().unwrap().to_string_lossy().into();
-        let mut file = File::open(file_name)?;
+        let file = File::open(file_name)?;
         let file_len = file.metadata()?.len();
 
         let cache = Arc::new(Mutex::new(BTreeMap::new()));
@@ -68,7 +68,7 @@ impl TilingByteReader {
             file,
             length: file_len,
             use_large_addresses: file_len > std::u32::MAX as u64,
-            display_name: display_name
+            display_name
         })
     }
     

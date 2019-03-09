@@ -9,7 +9,7 @@ use cursive::theme::ColorStyle;
 use unicode_width::UnicodeWidthStr;
 use crate::hex_reader::OffsetsVisitor;
 use crate::hex_reader::HexVisitor;
-use crate::hex_reader::ByteCategory;
+use crate::hex_tables::ByteCategory;
 
 pub struct HexView {
     reader: HexReader,
@@ -27,7 +27,6 @@ pub struct HexView {
 
 impl HexView {
     pub fn new(reader: HexReader) -> HexView {
-        let title = reader.file_name().to_owned();
         HexView {
             reader,
             invalidated_resize: true,

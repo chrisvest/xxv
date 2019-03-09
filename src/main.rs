@@ -10,6 +10,7 @@ use crate::hex_reader::HexReader;
 use crate::byte_reader::TilingByteReader;
 
 mod byte_reader;
+mod hex_tables;
 mod hex_reader;
 mod hex_view;
 mod xv_tui;

@@ -27,15 +27,17 @@ pub fn run_tui(reader: HexReader) {
     hints_bar_string.append_styled("uit   ", hints_style);
     hints_bar_string.append_styled("G", hint_key_style);
     hints_bar_string.append_styled("o to   ", hints_style);
+    hints_bar_string.append_styled("O", hint_key_style);
+    hints_bar_string.append_styled("pen   ", hints_style);
+    hints_bar_string.append_styled("S", hint_key_style);
+    hints_bar_string.append_styled("witch   ", hints_style);
     hints_bar_string.append_styled("V", hint_key_style);
     hints_bar_string.append_styled("isual   ", hints_style);
     hints_bar_string.append_styled("W", hint_key_style);
     hints_bar_string.append_styled("idth   ", hints_style);
-    hints_bar_string.append_styled("C", hint_key_style);
-    hints_bar_string.append_styled("onfigure", hints_style);
 
-    let mut hints_bar = TextView::new(hints_bar_string);
-    let mut progress_bar = TextView::new(StyledString::styled("progress bar", hints_style));
+    let hints_bar = TextView::new(hints_bar_string);
+    let progress_bar = TextView::new(StyledString::styled("progress bar", hints_style));
 
     let work_area = StackView::new().fullscreen_layer(data_pane.full_screen());
 
