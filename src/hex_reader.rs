@@ -3,11 +3,6 @@ use std::io::Result;
 use crate::byte_reader::TilingByteReader;
 use crate::hex_tables::*;
 
-pub enum VisualColumnWidth {
-    Fixed(usize),
-    PerByte(usize)
-}
-
 pub enum VisualMode {
     Unicode,
     Ascii
@@ -77,11 +72,6 @@ impl HexReader {
         if self.reader.use_large_addresses() { 16 + 2 } else { 8 + 2 }
     }
     
-    pub fn get_visual_data_width(&self) -> VisualColumnWidth {
-        // Hard-coded for now, until we get more advanced visualisations.
-        VisualColumnWidth::PerByte(1)
-    }
-    
     pub fn get_bytes_left_in_line(&self) -> u64 {
         self.line_length - self.window_pos.0
     }
@@ -109,10 +99,6 @@ impl HexReader {
         visitor.end();
     }
     
-    pub fn get_column_offsets(&mut self) -> String {
-        unimplemented!() // todo
-    }
-
     pub fn visit_hex(&self, visitor: &mut HexVisitor) {
         let cap = self.capture.as_slice();
         
