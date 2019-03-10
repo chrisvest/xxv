@@ -42,6 +42,16 @@ impl HexView {
         }
     }
     
+    pub fn set_line_length(&mut self, length: u64) {
+        self.reader.line_length = length;
+        self.invalidated_resize = true;
+        self.invalidated_data_changed = true;
+    }
+    
+    pub fn get_line_length(&self) -> u64 {
+        self.reader.line_length
+    }
+    
     fn toggle_visual(&mut self) -> EventResult {
         match self.visual {
             Visual::Unicode => {

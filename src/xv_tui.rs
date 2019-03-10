@@ -5,7 +5,7 @@ use cursive::traits::*;
 use cursive::utils::markup::*;
 use cursive::views::*;
 
-use crate::hex_reader::{HexReader, HexVisitor};
+use crate::hex_reader::HexReader;
 use crate::hex_view::HexView;
 
 pub fn run_tui(reader: HexReader) {
@@ -14,6 +14,7 @@ pub fn run_tui(reader: HexReader) {
     tui.add_global_callback(Key::Esc, quit);
     tui.add_global_callback('?', help);
     tui.add_global_callback(Key::F1, help);
+    tui.add_global_callback('w', adjust_line_width);
 
     let hints_style = ColorStyle::new(
         ColorType::Palette(PaletteColor::Tertiary),
@@ -50,64 +51,6 @@ pub fn run_tui(reader: HexReader) {
         .child(status_bar)
         .full_screen());
 
-//    let select = SelectView::<String>::new()
-//        .on_submit(on_submit)
-//        .with_id("select")
-//        .fixed_size((10, 5));
-//
-//    fn on_submit(s: &mut Cursive, name: &String) {
-//        s.pop_layer();
-//        s.add_layer(Dialog::text(format!("Name: {}\nAwesome: yes", name))
-//            .title(format!("{}'s info", name))
-//            .button("Quit", Cursive::quit));
-//    }
-//
-//    let buttons = LinearLayout::vertical()
-//        .child(Button::new("Add new", add_name))
-//        .child(Button::new("Delete", delete_name))
-//        .child(DummyView)
-//        .child(Button::new("Quit", Cursive::quit));
-//
-//    fn add_name(s: &mut Cursive) {
-//        fn ok(s: &mut Cursive, name: &str) {
-//            s.call_on_id("select", |view: &mut SelectView<String>| {
-//                view.add_item_str(name)
-//            });
-//            s.pop_layer();
-//        }
-//
-//        s.add_layer(Dialog::around(EditView::new()
-//            .on_submit(ok)
-//            .with_id("name")
-//            .fixed_width(10))
-//            .title("Enter a new name")
-//            .button("Ok", |s| {
-//                let name = s.call_on_id("name", |v: &mut EditView| {
-//                    v.get_content()
-//                }).unwrap();
-//                ok(s, &name);
-//            })
-//            .button("Cancel", |s| {
-//                s.pop_layer();
-//            }));
-//    }
-//
-//    fn delete_name(s: &mut Cursive) {
-//        let mut select = s.find_id::<SelectView<String>>("select").unwrap();
-//        match select.selected_id() {
-//            None => s.add_layer(Dialog::info("No name to remove!")),
-//            Some(focus) => {
-//                select.remove_item(focus);
-//            }
-//        }
-//    }
-//
-//    siv.add_layer(Dialog::around(LinearLayout::horizontal()
-//        .child(select)
-//        .child(DummyView)
-//        .child(buttons))
-//        .title("Select a profile"));
-
     tui.run();
 }
 
@@ -117,4 +60,48 @@ fn quit(s: &mut Cursive) {
 
 fn help(s: &mut Cursive) {
     s.add_layer(Dialog::info("Helpful text\n\nbla bla bla..."))
+}
+
+fn adjust_line_width(s: &mut Cursive) {
+    fn set_line_length(s: &mut Cursive, line_length: &str) {
+        s.pop_layer();
+        if !line_length.is_empty() {
+            let len_result = if line_length.starts_with("0x") {
+                u64::from_str_radix(&line_length[2..], 16)
+            } else if line_length.starts_with("0") {
+                u64::from_str_radix(line_length, 8)
+            } else {
+                u64::from_str_radix(line_length, 10)
+            };
+            match len_result {
+                Ok(length) => s.call_on_id("hex_view", |v: &mut HexView| {
+                    if length > 0 {
+                        v.set_line_length(length);
+                    }
+                }),
+                _ => None,
+            };
+        }
+    }
+
+    let current_length = s.call_on_id("hex_view", |v: &mut HexView| v.get_line_length()).unwrap();
+    let current_length_str = format!("{}", current_length);
+    let edit_view = EditView::new()
+        .content(current_length_str)
+        .on_submit(set_line_length)
+        .with_id("line_length");
+    let dialog = Dialog::around(edit_view)
+        .title("Line Width")
+        .dismiss_button("Cancel")
+        .button("Ok", |s| {
+            let line_length = s.call_on_id(
+                "line_length",
+                |view: &mut EditView| view.get_content()).unwrap();
+            set_line_length(s, &line_length);
+        });
+    let esc_view = OnEventView::new(dialog)
+        .on_event(Key::Esc, |s| {
+            s.pop_layer();
+        });
+    s.add_layer(esc_view)
 }
