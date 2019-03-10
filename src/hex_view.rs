@@ -42,6 +42,14 @@ impl HexView {
         }
     }
     
+    pub fn go_to_offset(&mut self, offset: u64) {
+        let line = offset / self.reader.line_length;
+        let line_offset = offset % self.reader.line_length;
+//        self.reader.window_pos = (line_offset, line);
+        self.reader.window_pos.1 = line;
+        self.invalidated_data_changed = true;
+    }
+    
     pub fn set_line_length(&mut self, length: u64) {
         self.reader.line_length = length;
         self.invalidated_resize = true;

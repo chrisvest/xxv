@@ -4,6 +4,7 @@ use cursive::traits::Identifiable;
 use cursive::event::Key;
 use crate::hex_view::HexView;
 use std::num::ParseIntError;
+use crate::utilities::parse_number;
 
 pub fn open_set_width_dialog(s: &mut Cursive) {
     let current_length = get_current_width(s);
@@ -11,7 +12,7 @@ pub fn open_set_width_dialog(s: &mut Cursive) {
     
     let edit_view = EditView::new()
         .content(current_length_str)
-        .on_submit(set_line_length)
+        .on_submit(do_set_line_length)
         .with_id("line_length");
     
     let dialog = Dialog::around(edit_view)
@@ -21,7 +22,7 @@ pub fn open_set_width_dialog(s: &mut Cursive) {
             let line_length = s.call_on_id(
                 "line_length",
                 |view: &mut EditView| view.get_content()).unwrap();
-            set_line_length(s, &line_length);
+            do_set_line_length(s, &line_length);
         });
     
     let esc_view = OnEventView::new(dialog)
@@ -36,7 +37,7 @@ fn get_current_width(s: &mut Cursive) -> u64 {
     s.call_on_id("hex_view", |v: &mut HexView| v.get_line_length()).unwrap()
 }
 
-fn set_line_length(s: &mut Cursive, line_length: &str) {
+fn do_set_line_length(s: &mut Cursive, line_length: &str) {
     s.pop_layer();
     if !line_length.is_empty() {
         let len_result = parse_number(line_length);
@@ -51,12 +52,3 @@ fn set_line_length(s: &mut Cursive, line_length: &str) {
     }
 }
 
-fn parse_number(number_str: &str) -> Result<u64, ParseIntError> {
-    if number_str.starts_with("0x") {
-        u64::from_str_radix(&number_str[2..], 16)
-    } else if number_str.starts_with("0") {
-        u64::from_str_radix(number_str, 8)
-    } else {
-        u64::from_str_radix(number_str, 10)
-    }
-}

@@ -9,11 +9,13 @@ use clap::{App, Arg};
 use crate::hex_reader::HexReader;
 use crate::byte_reader::TilingByteReader;
 
+mod utilities;
 mod byte_reader;
 mod hex_tables;
 mod hex_reader;
 mod hex_view;
 mod set_width_dialog;
+mod goto_dialog;
 mod xv_tui;
 
 fn main() -> Result<()> {

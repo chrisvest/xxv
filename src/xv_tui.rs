@@ -8,6 +8,7 @@ use cursive::views::*;
 use crate::hex_reader::HexReader;
 use crate::hex_view::HexView;
 use crate::set_width_dialog::open_set_width_dialog;
+use crate::goto_dialog::open_goto_dialog;
 
 pub fn run_tui(reader: HexReader) {
     let mut tui = Cursive::default();
@@ -16,6 +17,7 @@ pub fn run_tui(reader: HexReader) {
     tui.add_global_callback('?', help);
     tui.add_global_callback(Key::F1, help);
     tui.add_global_callback('w', open_set_width_dialog);
+    tui.add_global_callback('g', open_goto_dialog);
 
     let hints_style = ColorStyle::new(
         ColorType::Palette(PaletteColor::Tertiary),
