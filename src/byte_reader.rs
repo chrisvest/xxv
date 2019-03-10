@@ -140,7 +140,7 @@ mod tests {
         
         let mut reader = TilingByteReader::new(tmpf.path()).unwrap();
         let mut buf = Vec::new();
-        reader.get_window((0,0,4,2), 8, &mut buf);
+        reader.get_window((0,0,4,2), 8, &mut buf).unwrap();
         assert_eq!(buf, b"012389ab")
     }
     
@@ -151,7 +151,7 @@ mod tests {
         
         let mut reader = TilingByteReader::new(tmpf.path()).unwrap();
         let mut buf = Vec::new();
-        reader.get_window((4,0,4,2), 8, &mut buf);
+        reader.get_window((4,0,4,2), 8, &mut buf).unwrap();
         assert_eq!(buf, b"4567cdef")
     }
     
@@ -162,7 +162,7 @@ mod tests {
         
         let mut reader = TilingByteReader::new(tmpf.path()).unwrap();
         let mut buf = Vec::new();
-        reader.get_window((0,1,4,2), 8, &mut buf);
+        reader.get_window((0,1,4,2), 8, &mut buf).unwrap();
         assert_eq!(buf, b"89ab")
     }
 }

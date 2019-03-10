@@ -13,6 +13,7 @@ mod byte_reader;
 mod hex_tables;
 mod hex_reader;
 mod hex_view;
+mod set_width_dialog;
 mod xv_tui;
 
 fn main() -> Result<()> {

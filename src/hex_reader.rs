@@ -83,20 +83,17 @@ impl HexReader {
     }
     
     pub fn get_bytes_left_in_line(&self) -> u64 {
-        let (x, y) = self.window_pos;
-        self.line_length - x
+        self.line_length - self.window_pos.0
     }
     
     pub fn visit_row_offsets(&self, visitor: &mut OffsetsVisitor) {
-        let (x, y) = self.window_pos;
         let (w, h) = self.window_size;
-        let base_offset = y * self.line_length;
+        let base_offset = self.window_pos.1 * self.line_length;
         let mut capture_height = self.capture.len() / w as usize;
         if capture_height * (w as usize) < self.capture.len() {
             capture_height += 1;
         }
         let height = (h as usize).min(capture_height);
-        let mut bufout = String::with_capacity(self.get_row_offsets_width() * height);
         
         if self.reader.use_large_addresses() {
             for i in 0..height as u64 {
@@ -117,8 +114,6 @@ impl HexReader {
     }
 
     pub fn visit_hex(&self, visitor: &mut HexVisitor) {
-        let (x, y) = self.window_pos;
-        let (w, h) = self.window_size;
         let cap = self.capture.as_slice();
         
         let mut i = 0;
@@ -127,19 +122,18 @@ impl HexReader {
             let r = b.clone() as usize;
             visitor.byte(BYTE_RENDER[r], &BYTE_CATEGORY[r]);
             
-            if i == w {
+            if i == self.window_size.0 {
                 visitor.next_line();
                 i = 0;
-            } else if (x + i as u64) % self.group as u64 == 0 {
+            } else if (self.window_pos.0 + i as u64) % self.group as u64 == 0 {
                 visitor.group();
             }
         }
+
         visitor.end();
     }
     
     pub fn visit_visual(&self, visitor: &mut VisualVisitor) {
-        let (x, y) = self.window_pos;
-        let (w, h) = self.window_size;
         let cap = self.capture.as_slice();
         let table = self.vis_table();
 
@@ -149,13 +143,14 @@ impl HexReader {
             let r = b.clone() as usize;
             visitor.visual_element(table[r], &BYTE_CATEGORY[r]);
 
-            if i == w {
+            if i == self.window_size.0 {
                 visitor.next_line();
                 i = 0;
-            } else if (x + i as u64) % self.group as u64 == 0 {
+            } else if (self.window_pos.0 + i as u64) % self.group as u64 == 0 {
                 visitor.group();
             }
         }
+
         visitor.end();
     }
     
@@ -189,7 +184,7 @@ mod tests {
     }
     
     impl HexVisitor for String {
-        fn byte(&mut self, byte: &str, category: &ByteCategory) {
+        fn byte(&mut self, byte: &str, _category: &ByteCategory) {
             self.push_str(byte);
             self.push(' ');
         }
@@ -235,7 +230,7 @@ mod tests {
         reader.window_pos = (0,0);
         reader.window_size = (4,16);
         reader.line_length = 4;
-        reader.capture();
+        reader.capture().unwrap();
         let mut hex = String::new();
         reader.visit_hex(&mut hex);
         // Bytes:  Hex:
@@ -258,7 +253,7 @@ mod tests {
         reader.window_pos = (0,0);
         reader.window_size = (4,16);
         reader.line_length = 4;
-        reader.capture();
+        reader.capture().unwrap();
         let mut hex = String::new();
         reader.visit_hex(&mut hex);
         // Bytes:  Hex:
