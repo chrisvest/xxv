@@ -12,7 +12,7 @@ lto = true
 
 [dependencies]
 clap = "2.32.0"
-cursive = "0.10.0"
+cursive = "0.11.0"
 unicode-width = "0.1.5"
 #wl-clipboard-rs = "0.2.0" # Wayland clipboard integration.
 
