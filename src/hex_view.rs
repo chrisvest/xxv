@@ -45,8 +45,8 @@ impl HexView {
     pub fn go_to_offset(&mut self, offset: u64) {
         let line = offset / self.reader.line_length;
         let line_offset = offset % self.reader.line_length;
-//        self.reader.window_pos = (line_offset, line);
-        self.reader.window_pos.1 = line;
+        self.reader.window_pos = (line_offset, line);
+        // todo adjust window size if it would overflow at new position
         self.invalidated_data_changed = true;
     }
     
@@ -94,13 +94,14 @@ impl HexView {
     
     fn on_key_event(&mut self, k: Key) -> EventResult {
         let inner_height = self.offsets_column_size.y as i16;
+        let line_length = self.reader.line_length;
         let (pos_x, pos_y) = self.reader.window_pos;
         let (size_x, _size_y) = self.reader.window_size;
         let offset = match k {
             Key::Down => (0, 1),
             Key::Up => if pos_y > 0 { (0, -1) } else { (0, 0) },
             Key::Left => if pos_x > 0 { (-1, 0) } else { (0, 0) }
-            Key::Right => if pos_x + (size_x as u64) < self.reader.line_length { (1, 0) } else { (0, 0) },
+            Key::Right => if pos_x + (size_x as u64) < line_length { (1, 0) } else { (0, 0) },
             Key::PageDown => (0, inner_height),
             Key::PageUp => if pos_y > inner_height as u64 {
                 (0, -inner_height)
@@ -108,7 +109,9 @@ impl HexView {
                 (0, -(pos_y as i16))
             } else {
                 (0, 0)
-            }
+            },
+            Key::Home => (-(pos_x as i16), 0),
+            Key::End => ((line_length - size_x as u64 - pos_x) as i16, 0),
             _ => (0, 0)
         };
         self.navigate(offset)
