@@ -2,3 +2,6 @@
 **/*.rs.bk
 .idea
 err
+oprofile_annotated.txt
+oprofile_data
+perf.data
