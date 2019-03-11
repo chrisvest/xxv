@@ -65,6 +65,8 @@ impl HexReader {
         let (x, y) = self.window_pos;
         let (w, h) = self.window_size;
         self.capture.clear();
+        // xxx Possible optimisation, since 'capture' is a Vec of u8 where drop is a no-op.
+//        unsafe { self.capture.set_len(0) };
         self.reader.get_window((x, y, w, h), self.line_length, &mut self.capture)
     }
     
