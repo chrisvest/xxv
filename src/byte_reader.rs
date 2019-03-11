@@ -1,16 +1,9 @@
-use std::path::Path;
-use std::io::Result;
 use std::fs::File;
-use std::io::SeekFrom;
-use std::io::Seek;
-use std::thread::Builder;
-use std::sync::mpsc::sync_channel;
-use std::sync::Mutex;
-use std::sync::Arc;
-use std::collections::BTreeMap;
-use std::sync::mpsc::Receiver;
-use std::sync::mpsc::SyncSender;
 use std::io::Read;
+use std::io::Result;
+use std::io::Seek;
+use std::io::SeekFrom;
+use std::path::Path;
 
 pub struct TilingByteReader {
     file: File,
@@ -19,50 +12,13 @@ pub struct TilingByteReader {
     display_name: String
 }
 
-pub struct Segment {
-    offset: u64,
-    usage_counter: u32,
-    data: [u8; 512]
-}
-
-struct IoRequest {
-    offset: u64,
-//    result: Promise<Box<Segment>>
-}
-
 pub type Window = (u64, u64, u16, u16);
-//pub struct Window {
-//    pub x: u64,
-//    pub y: u64,
-//    pub w: u16,
-//    pub h: u16
-//}
-//
-//impl<T> From<(T,T,T,T)> for Window {
-//    fn from((x, y, w, h): (T,T,T,T)) -> Self {
-//        Window { x, y, w, h }
-//    }
-//}
 
 impl TilingByteReader {
     pub fn new<P: AsRef<Path>>(file_name: P) -> Result<TilingByteReader> {
         let display_name: String = file_name.as_ref().file_name().unwrap().to_string_lossy().into();
         let file = File::open(file_name)?;
         let file_len = file.metadata()?.len();
-
-        let cache = Arc::new(Mutex::new(BTreeMap::new()));
-        let (segments_in, segments_out) = sync_channel::<Box<Segment>>(10);
-        let (ios_in, ios_out) = sync_channel::<IoRequest>(100);
-
-        let fetcher_cache = Arc::clone(&cache);
-        let io_fetcher = Builder::new()
-            .name("XV IO Fetcher Thread".to_owned())
-            .spawn(move || run_fetcher(fetcher_cache, ios_out, segments_out))?;
-
-        let evicter_cache = Arc::clone(&cache);
-        let cache_evicter = Builder::new()
-            .name("XV Cache Evicter".to_owned())
-            .spawn(move || run_evicter(evicter_cache, segments_in))?;
 
         Ok(TilingByteReader {
             file,
@@ -107,21 +63,14 @@ impl TilingByteReader {
     }
 }
 
-fn run_fetcher(cache: Arc<Mutex<BTreeMap<u64,Box<Segment>>>>, ios_out: Receiver<IoRequest>, segments_out: Receiver<Box<Segment>>) {
-
-}
-
-fn run_evicter(cache: Arc<Mutex<BTreeMap<u64,Box<Segment>>>>, segments_in: SyncSender<Box<Segment>>) {
-
-}
-
-
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::io::Write;
+
     use tempfile;
-    
+
+    use super::*;
+
     #[test]
     fn getting_top_left_window() {
         let mut tmpf = tempfile::NamedTempFile::new().unwrap();

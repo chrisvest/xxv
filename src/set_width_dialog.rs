@@ -3,7 +3,6 @@ use cursive::views::{EditView, Dialog, OnEventView};
 use cursive::traits::Identifiable;
 use cursive::event::Key;
 use crate::hex_view::HexView;
-use std::num::ParseIntError;
 use crate::utilities::parse_number;
 
 pub fn open_set_width_dialog(s: &mut Cursive) {
