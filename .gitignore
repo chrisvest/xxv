@@ -5,3 +5,4 @@ err
 oprofile_annotated.txt
 oprofile_data
 perf.data
+perf.data.old
