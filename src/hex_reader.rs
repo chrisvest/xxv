@@ -36,7 +36,7 @@ pub trait VisualVisitor {
 
 pub struct HexReader {
     reader: TilingByteReader,
-    pub line_length: u64,
+    pub line_width: u64,
     pub group: u16,
     pub window_pos: (u64,u64),
     pub window_size: (u16,u16),
@@ -48,7 +48,7 @@ impl HexReader {
     pub fn new(reader: TilingByteReader) -> Result<HexReader> {
         Ok(HexReader {
             reader,
-            line_length: 16,
+            line_width: 16,
             group: 8,
             window_pos: (0,0),
             window_size: (16,32),
@@ -61,13 +61,17 @@ impl HexReader {
         self.reader.file_name()
     }
     
+    pub fn get_length(&self) -> u64 {
+        self.reader.get_length()
+    }
+    
     pub fn capture(&mut self) -> Result<()> {
         let (x, y) = self.window_pos;
         let (w, h) = self.window_size;
         self.capture.clear();
         // xxx Possible optimisation, since 'capture' is a Vec of u8 where drop is a no-op.
 //        unsafe { self.capture.set_len(0) };
-        self.reader.get_window((x, y, w, h), self.line_length, &mut self.capture)
+        self.reader.get_window((x, y, w, h), self.line_width, &mut self.capture)
     }
     
     pub fn get_row_offsets_width(&self) -> usize {
@@ -75,12 +79,12 @@ impl HexReader {
     }
     
     pub fn get_bytes_left_in_line(&self) -> u64 {
-        self.line_length - self.window_pos.0
+        self.line_width - self.window_pos.0
     }
     
     pub fn visit_row_offsets(&self, visitor: &mut OffsetsVisitor) {
         let (w, h) = self.window_size;
-        let base_offset = self.window_pos.1 * self.line_length;
+        let base_offset = self.window_pos.1 * self.line_width;
         let mut capture_height = self.capture.len() / w as usize;
         if capture_height * (w as usize) < self.capture.len() {
             capture_height += 1;
@@ -89,12 +93,12 @@ impl HexReader {
         
         if self.reader.use_large_addresses() {
             for i in 0..height as u64 {
-                let offset = base_offset + i * self.line_length;
+                let offset = base_offset + i * self.line_width;
                 visitor.offset(&format!("0x{:016X}", offset));
             }
         } else {
             for i in 0..height as u64 {
-                let offset = base_offset + i * self.line_length;
+                let offset = base_offset + i * self.line_width;
                 visitor.offset(&format!("0x{:08X}", offset));
             }
         }
@@ -199,7 +203,7 @@ mod tests {
         let mut reader = HexReader::new(TilingByteReader::new(tmpf.path()).unwrap()).unwrap();
         reader.window_pos = (0,0);
         reader.window_size = (2,2);
-        reader.line_length = 4;
+        reader.line_width = 4;
         reader.capture().unwrap();
         let mut hex = String::new();
         reader.visit_hex(&mut hex);
@@ -217,7 +221,7 @@ mod tests {
         let mut reader = HexReader::new(TilingByteReader::new(tmpf.path()).unwrap()).unwrap();
         reader.window_pos = (0,0);
         reader.window_size = (4,16);
-        reader.line_length = 4;
+        reader.line_width = 4;
         reader.capture().unwrap();
         let mut hex = String::new();
         reader.visit_hex(&mut hex);
@@ -240,7 +244,7 @@ mod tests {
         let mut reader = HexReader::new(TilingByteReader::new(tmpf.path()).unwrap()).unwrap();
         reader.window_pos = (0,0);
         reader.window_size = (4,16);
-        reader.line_length = 4;
+        reader.line_width = 4;
         reader.capture().unwrap();
         let mut hex = String::new();
         reader.visit_hex(&mut hex);

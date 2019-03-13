@@ -1,5 +1,5 @@
 use cursive::Cursive;
-use cursive::views::{LinearLayout, EditView, TextView, Dialog, OnEventView};
+use cursive::views::{LinearLayout, EditView, TextView, Dialog, OnEventView, DummyView};
 use cursive::traits::{Identifiable, Boxable};
 use cursive::direction::Orientation;
 use cursive::event::Key;
@@ -7,12 +7,26 @@ use crate::hex_view::HexView;
 use crate::utilities::parse_number_or_zero;
 
 pub fn open_goto_dialog(s: &mut Cursive) {
-    let layout = LinearLayout::new(Orientation::Horizontal)
-        .child(EditView::new().content("0").with_id("offset").min_width(10))
+    let (line_width, length) = s.call_on_id(
+        "hex_view", |v: &mut HexView| (v.get_line_width(), v.get_length())).unwrap();
+    let last_line_idx = length / line_width;
+    
+    let edit_boxes = LinearLayout::new(Orientation::Horizontal)
+        .child(EditView::new().content("0").with_id("offset").min_width(18))
         .child(TextView::new(" + "))
-        .child(EditView::new().content("0").with_id("mul1").min_width(10))
+        .child(EditView::new().content("0").with_id("mul1").min_width(18))
         .child(TextView::new(" * "))
-        .child(EditView::new().content("0").with_id("mul2").min_width(10));
+        .child(EditView::new().content(format!("{}", line_width)).with_id("mul2").min_width(18));
+    
+    let info_boxes = LinearLayout::new(Orientation::Horizontal)
+        .child(TextView::new("Line width:  \nFile size:  \nLast line index:  "))
+        .child(TextView::new(format!("{}  \n{}  \n{}", line_width, length, last_line_idx)))
+        .child(TextView::new(format!("0x{:X}\n0x{:X}\n0x{:X}", line_width, length, last_line_idx)));
+    
+    let layout = LinearLayout::new(Orientation::Vertical)
+        .child(edit_boxes)
+        .child(DummyView)
+        .child(info_boxes);
     
     let dialog = Dialog::around(layout)
         .dismiss_button("Cancel")

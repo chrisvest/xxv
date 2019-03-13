@@ -33,7 +33,7 @@ pub fn open_set_width_dialog(s: &mut Cursive) {
 }
 
 fn get_current_width(s: &mut Cursive) -> u64 {
-    s.call_on_id("hex_view", |v: &mut HexView| v.get_line_length()).unwrap()
+    s.call_on_id("hex_view", |v: &mut HexView| v.get_line_width()).unwrap()
 }
 
 fn do_set_line_length(s: &mut Cursive, line_length: &str) {
@@ -43,7 +43,7 @@ fn do_set_line_length(s: &mut Cursive, line_length: &str) {
         match len_result {
             Ok(length) => s.call_on_id("hex_view", |v: &mut HexView| {
                 if length > 0 {
-                    v.set_line_length(length);
+                    v.set_line_width(length);
                 }
             }),
             _ => None,

@@ -43,21 +43,25 @@ impl HexView {
     }
     
     pub fn go_to_offset(&mut self, offset: u64) {
-        let line = offset / self.reader.line_length;
-        let line_offset = offset % self.reader.line_length;
+        let line = offset / self.reader.line_width;
+        let line_offset = offset % self.reader.line_width;
         self.reader.window_pos = (line_offset, line);
         // todo adjust window size if it would overflow at new position
         self.invalidated_data_changed = true;
     }
     
-    pub fn set_line_length(&mut self, length: u64) {
-        self.reader.line_length = length;
+    pub fn set_line_width(&mut self, length: u64) {
+        self.reader.line_width = length;
         self.invalidated_resize = true;
         self.invalidated_data_changed = true;
     }
     
-    pub fn get_line_length(&self) -> u64 {
-        self.reader.line_length
+    pub fn get_line_width(&self) -> u64 {
+        self.reader.line_width
+    }
+    
+    pub fn get_length(&self) -> u64 {
+        self.reader.get_length()
     }
     
     fn toggle_visual(&mut self) -> EventResult {
@@ -94,14 +98,14 @@ impl HexView {
     
     fn on_key_event(&mut self, k: Key) -> EventResult {
         let inner_height = self.offsets_column_size.y as i16;
-        let line_length = self.reader.line_length;
+        let line_width = self.reader.line_width;
         let (pos_x, pos_y) = self.reader.window_pos;
         let (size_x, _size_y) = self.reader.window_size;
         let offset = match k {
             Key::Down => (0, 1),
             Key::Up => if pos_y > 0 { (0, -1) } else { (0, 0) },
             Key::Left => if pos_x > 0 { (-1, 0) } else { (0, 0) }
-            Key::Right => if pos_x + (size_x as u64) < line_length { (1, 0) } else { (0, 0) },
+            Key::Right => if pos_x + (size_x as u64) < line_width { (1, 0) } else { (0, 0) },
             Key::PageDown => (0, inner_height),
             Key::PageUp => if pos_y > inner_height as u64 {
                 (0, -inner_height)
@@ -111,7 +115,7 @@ impl HexView {
                 (0, 0)
             },
             Key::Home => (-(pos_x as i16), 0),
-            Key::End => ((line_length - size_x as u64 - pos_x) as i16, 0),
+            Key::End => ((line_width - size_x as u64 - pos_x) as i16, 0),
             _ => (0, 0)
         };
         self.navigate(offset)
@@ -415,7 +419,7 @@ mod tests {
         let constraint = Vec2::new(80, 23);
         view.layout(constraint);
 
-        assert_eq!(view.reader.line_length, 16);
+        assert_eq!(view.reader.line_width, 16);
         assert_eq!(view.reader.window_pos, (0, 0));
         assert_eq!(view.reader.window_size, (16, 21));
 
@@ -441,7 +445,7 @@ mod tests {
         let constraint = Vec2::new(79, 23);
         view.layout(constraint);
 
-        assert_eq!(view.reader.line_length, 16);
+        assert_eq!(view.reader.line_width, 16);
         assert_eq!(view.reader.window_pos, (0, 0));
         assert_eq!(view.reader.window_size, (16, 21));
 
@@ -467,7 +471,7 @@ mod tests {
         let constraint = Vec2::new(78, 23);
         view.layout(constraint);
 
-        assert_eq!(view.reader.line_length, 16);
+        assert_eq!(view.reader.line_width, 16);
         assert_eq!(view.reader.window_pos, (0, 0));
         assert_eq!(view.reader.window_size, (16, 21));
 
@@ -493,7 +497,7 @@ mod tests {
         let constraint = Vec2::new(77, 23);
         view.layout(constraint);
 
-        assert_eq!(view.reader.line_length, 16);
+        assert_eq!(view.reader.line_width, 16);
         assert_eq!(view.reader.window_pos, (0, 0));
         assert_eq!(view.reader.window_size, (15, 21));
 
@@ -520,7 +524,7 @@ mod tests {
         view.reader.window_pos = (1, 0);
         view.layout(constraint);
 
-        assert_eq!(view.reader.line_length, 16);
+        assert_eq!(view.reader.line_width, 16);
         assert_eq!(view.reader.window_pos, (1, 0));
         assert_eq!(view.reader.window_size, (15, 21));
 
@@ -543,11 +547,11 @@ mod tests {
         let hex_reader = HexReader::new(byte_reader).unwrap();
         let mut view = HexView::new(hex_reader);
 
-        view.reader.line_length = 32;
+        view.reader.line_width = 32;
         let constraint = Vec2::new(80, 23);
         view.layout(constraint);
 
-        assert_eq!(view.reader.line_length, 32);
+        assert_eq!(view.reader.line_width, 32);
         assert_eq!(view.reader.window_pos, (0, 0));
         assert_eq!(view.reader.window_size, (16, 21));
 
