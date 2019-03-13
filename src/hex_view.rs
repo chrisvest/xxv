@@ -60,6 +60,16 @@ impl HexView {
         self.reader.line_width
     }
     
+    pub fn set_group(&mut self, group: u16) {
+        self.reader.group = group;
+        self.invalidated_resize = true;
+        self.invalidated_data_changed = true;
+    }
+
+    pub fn get_group(&self) -> u16 {
+        self.reader.group
+    }
+    
     pub fn get_length(&self) -> u64 {
         self.reader.get_length()
     }
