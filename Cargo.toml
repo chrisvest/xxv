@@ -5,10 +5,11 @@ authors = ["Chris Vest <mr.chrisvest@gmail.com>"]
 edition = "2018"
 
 [profile.release]
-debug = true
 overflow-checks = true
 codegen-units = 1
 lto = true
+opt-level = 'z'
+panic = 'abort'
 
 [dependencies]
 clap = "2.32.0"
