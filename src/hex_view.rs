@@ -115,7 +115,7 @@ impl HexView {
             Key::Down => (0, 1),
             Key::Up => if pos_y > 0 { (0, -1) } else { (0, 0) },
             Key::Left => if pos_x > 0 { (-1, 0) } else { (0, 0) }
-            Key::Right => if pos_x + (size_x as u64) < line_width { (1, 0) } else { (0, 0) },
+            Key::Right => if pos_x + u64::from(size_x) < line_width { (1, 0) } else { (0, 0) },
             Key::PageDown => (0, inner_height),
             Key::PageUp => if pos_y > inner_height as u64 {
                 (0, -inner_height)
@@ -125,7 +125,7 @@ impl HexView {
                 (0, 0)
             },
             Key::Home => (-(pos_x as i16), 0),
-            Key::End => ((line_width - size_x as u64 - pos_x) as i16, 0),
+            Key::End => ((line_width - u64::from(size_x) - pos_x) as i16, 0),
             _ => (0, 0)
         };
         self.navigate(offset)
@@ -233,7 +233,7 @@ impl View for HexView {
             self.hex_column_size = Vec2::new(constraint.x - hex_col_start - 1, inner_height);
 
             let reader_pos_x = self.reader.window_pos.0;
-            let group = self.reader.group as u64;
+            let group = u64::from(self.reader.group);
             let vis_group_spacer: usize = if self.show_visual_view { 1 } else { 0 };
             let vis_byte_width: usize = if self.show_visual_view { 1 } else { 0 };
             

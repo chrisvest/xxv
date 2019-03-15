@@ -68,7 +68,7 @@ fn do_set_widths(s: &mut Cursive) {
     if !group.is_empty() {
         match parse_number(&group) {
             Ok(group) => s.call_on_id("hex_view", |v: &mut HexView| {
-                if group > 0 && group < std::u16::MAX as u64 {
+                if group > 0 && group < u64::from(std::u16::MAX) {
                     v.set_group(group as u16);
                 }
             }),

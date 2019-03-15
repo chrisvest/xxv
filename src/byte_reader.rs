@@ -23,7 +23,7 @@ impl TilingByteReader {
         Ok(TilingByteReader {
             file,
             length: file_len,
-            use_large_addresses: file_len > std::u32::MAX as u64,
+            use_large_addresses: file_len > u64::from(std::u32::MAX),
             display_name
         })
     }
@@ -42,10 +42,10 @@ impl TilingByteReader {
         // The 'x' coordinate is the offset into each line, where the left-most window edge starts.
         // The 'h' height is the number of lines in the window,
         // and 'w' is the width of each window line.
-        let (x, y, w, h) = window.into();
+        let (x, y, w, h) = window;
         let mut read_buf = vec![0; w as usize];
 
-        for i in y..(y + (h as u64)) {
+        for i in y..(y + (u64::from(h))) {
             let offset = line_length * i + x;
             self.file.seek(SeekFrom::Start(offset))?;
             let bytes_read = self.file.read(&mut read_buf)?;

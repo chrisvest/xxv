@@ -40,7 +40,7 @@ pub struct HexReader {
     pub group: u16,
     pub window_pos: (u64,u64),
     pub window_size: (u16,u16),
-    capture: Box<Vec<u8>>,
+    capture: Vec<u8>,
     vis_mode: VisualMode
 }
 
@@ -52,7 +52,7 @@ impl HexReader {
             group: 8,
             window_pos: (0,0),
             window_size: (16,32),
-            capture: Box::new(Vec::new()),
+            capture: Vec::new(),
             vis_mode: VisualMode::Unicode
         })
     }
@@ -111,13 +111,13 @@ impl HexReader {
         let mut i = 0;
         for b in cap {
             i += 1;
-            let r = b.clone() as usize;
+            let r = *b as usize;
             visitor.byte(BYTE_RENDER[r], &BYTE_CATEGORY[r]);
             
             if i == self.window_size.0 {
                 visitor.next_line();
                 i = 0;
-            } else if (self.window_pos.0 + i as u64) % self.group as u64 == 0 {
+            } else if (self.window_pos.0 + u64::from(i)) % u64::from(self.group) == 0 {
                 visitor.group();
             }
         }
@@ -132,13 +132,13 @@ impl HexReader {
         let mut i = 0;
         for b in cap {
             i += 1;
-            let r = b.clone() as usize;
+            let r = *b as usize;
             visitor.visual_element(table[r], &BYTE_CATEGORY[r]);
 
             if i == self.window_size.0 {
                 visitor.next_line();
                 i = 0;
-            } else if (self.window_pos.0 + i as u64) % self.group as u64 == 0 {
+            } else if (self.window_pos.0 + u64::from(i)) % u64::from(self.group) == 0 {
                 visitor.group();
             }
         }
