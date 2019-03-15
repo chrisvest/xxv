@@ -1,7 +1,7 @@
 use crate::hex_reader::{HexReader, VisualVisitor, VisualMode};
 use cursive::traits::View;
 use cursive::Printer;
-use cursive::event::{Event, Key};
+use cursive::event::{Event, Key, MouseEvent};
 use cursive::event::EventResult;
 use cursive::Vec2;
 use cursive::align::HAlign;
@@ -102,6 +102,14 @@ impl HexView {
             'h' => self.on_key_event(Key::Left),
             'l' => self.on_key_event(Key::Right),
             'v' => self.toggle_visual(),
+            _ => EventResult::Ignored
+        }
+    }
+    
+    fn on_mouse_event(&mut self, _offset: Vec2, _position: Vec2, event: MouseEvent) -> EventResult {
+        match event {
+            MouseEvent::WheelUp => self.on_key_event(Key::Up),
+            MouseEvent::WheelDown => self.on_key_event(Key::Down),
             _ => EventResult::Ignored
         }
     }
@@ -311,6 +319,7 @@ impl View for HexView {
             },
             Event::Char(c) => self.on_char_event(c),
             Event::Key(k) => self.on_key_event(k),
+            Event::Mouse { offset, position, event } => self.on_mouse_event(offset, position, event),
             _ => EventResult::Ignored
         }
     }
