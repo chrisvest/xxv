@@ -1,14 +1,13 @@
 use cursive::Cursive;
 use cursive::event::Key;
-use cursive::theme::*;
-use cursive::traits::*;
-use cursive::utils::markup::*;
-use cursive::views::*;
+use cursive::traits::{Boxable, Identifiable};
+use cursive::views::{Dialog, LinearLayout, StackView};
 
+use crate::goto_dialog::open_goto_dialog;
 use crate::hex_reader::HexReader;
 use crate::hex_view::HexView;
 use crate::set_width_dialog::open_set_width_dialog;
-use crate::goto_dialog::open_goto_dialog;
+use crate::status_bar::new_status_bar;
 
 pub fn run_tui(reader: HexReader) {
     let mut tui = Cursive::default();
@@ -19,35 +18,11 @@ pub fn run_tui(reader: HexReader) {
     tui.add_global_callback('w', open_set_width_dialog);
     tui.add_global_callback('g', open_goto_dialog);
 
-    let hints_style = ColorStyle::new(
-        ColorType::Palette(PaletteColor::Tertiary),
-        ColorType::Palette(PaletteColor::Background));
-    let hint_key_style = Style::none().combine(hints_style).combine(Effect::Underline);
+    let hex_view = HexView::new(reader).with_id("hex_view");
 
-    let data_pane = HexView::new(reader).with_id("hex_view");
-
-    let mut hints_bar_string = StyledString::new();
-    hints_bar_string.append_styled("Q", hint_key_style);
-    hints_bar_string.append_styled("uit   ", hints_style);
-    hints_bar_string.append_styled("G", hint_key_style);
-    hints_bar_string.append_styled("o to   ", hints_style);
-    hints_bar_string.append_styled("O", hint_key_style);
-    hints_bar_string.append_styled("pen   ", hints_style);
-    hints_bar_string.append_styled("S", hint_key_style);
-    hints_bar_string.append_styled("witch   ", hints_style);
-    hints_bar_string.append_styled("V", hint_key_style);
-    hints_bar_string.append_styled("isual   ", hints_style);
-    hints_bar_string.append_styled("W", hint_key_style);
-    hints_bar_string.append_styled("idth   ", hints_style);
-
-    let hints_bar = TextView::new(hints_bar_string);
-    let progress_bar = TextView::new(StyledString::styled("progress bar", hints_style));
-
-    let work_area = StackView::new().fullscreen_layer(data_pane.full_screen());
-
-    let status_bar = PaddedView::new((1, 1, 0, 0), LinearLayout::horizontal()
-        .child(hints_bar.full_width())
-        .child(progress_bar));
+    let work_area = StackView::new().fullscreen_layer(hex_view.full_screen());
+    
+    let status_bar = new_status_bar();
 
     tui.screen_mut().add_transparent_layer(LinearLayout::vertical()
         .child(work_area)

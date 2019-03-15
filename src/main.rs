@@ -6,8 +6,8 @@ use std::io::Result;
 
 use clap::{App, Arg};
 
-use crate::hex_reader::HexReader;
 use crate::byte_reader::TilingByteReader;
+use crate::hex_reader::HexReader;
 
 mod utilities;
 mod byte_reader;
@@ -16,6 +16,7 @@ mod hex_reader;
 mod hex_view;
 mod set_width_dialog;
 mod goto_dialog;
+mod status_bar;
 mod xv_tui;
 
 fn main() -> Result<()> {
