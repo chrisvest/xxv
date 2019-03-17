@@ -6,8 +6,6 @@ use std::io::Result;
 
 use clap::{App, Arg};
 
-use crate::byte_reader::TilingByteReader;
-use crate::hex_reader::HexReader;
 use crate::xv_state::XvState;
 
 mod utilities;
@@ -32,10 +30,9 @@ fn main() -> Result<()> {
         .get_matches();
 
     // todo support opening multiple files at once
-    let state = XvState::new();
+    let mut state = XvState::new();
     let file_name = matches.value_of_os("file").unwrap();
-    let b_reader = TilingByteReader::new(file_name)?;
-    let h_reader = HexReader::new(b_reader)?;
+    let h_reader = state.open_reader(file_name)?;
     xv_tui::run_tui(h_reader, state);
     Ok(())
 }

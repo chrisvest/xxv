@@ -1,7 +1,12 @@
+use std::io::Result;
+use std::path::Path;
 
-use cursive::theme::{Theme, Palette};
-use cursive::theme::Color::*;
+use cursive::theme::{Palette, Theme};
 use cursive::theme::BaseColor::*;
+use cursive::theme::Color::*;
+
+use crate::byte_reader::TilingByteReader;
+use crate::hex_reader::HexReader;
 
 pub struct XvState {
     theme: bool,
@@ -10,6 +15,11 @@ pub struct XvState {
 impl XvState {
     pub fn new() -> XvState {
         XvState {theme: true}
+    }
+    
+    pub fn open_reader<P: AsRef<Path>>(&mut self, file_name: P) -> Result<HexReader> {
+        let b_reader = TilingByteReader::new(file_name)?;
+        HexReader::new(b_reader)
     }
     
     pub fn toggle_theme(&mut self) {
