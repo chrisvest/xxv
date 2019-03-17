@@ -16,7 +16,6 @@ pub struct HexView {
     invalidated_resize: bool,
     invalidated_data_changed: bool,
     show_visual_view: bool,
-    visual: Visual,
     offsets_column_pos: Vec2,
     offsets_column_size: Vec2,
     hex_column_pos: Vec2,
@@ -32,7 +31,6 @@ impl HexView {
             invalidated_resize: true,
             invalidated_data_changed: true,
             show_visual_view: true,
-            visual: Visual::Unicode,
             offsets_column_pos: Vec2::new(0, 0),
             offsets_column_size: Vec2::new(0, 0),
             hex_column_pos: Vec2::new(0, 0),
@@ -75,18 +73,16 @@ impl HexView {
     }
     
     fn toggle_visual(&mut self) -> EventResult {
-        match self.visual {
-            Visual::Unicode => {
-                self.visual = Visual::Ascii;
+        match self.reader.get_visual_mode() {
+            VisualMode::Unicode => {
                 self.reader.set_visual_mode(VisualMode::Ascii);
             },
-            Visual::Ascii => {
-                self.visual = Visual::Off;
+            VisualMode::Ascii => {
+                self.reader.set_visual_mode(VisualMode::Off);
                 self.show_visual_view = false;
                 self.invalidated_resize = true;
             },
-            Visual::Off => {
-                self.visual = Visual::Unicode;
+            VisualMode::Off => {
                 self.reader.set_visual_mode(VisualMode::Unicode);
                 self.show_visual_view = true;
                 self.invalidated_resize = true;
@@ -323,12 +319,6 @@ impl View for HexView {
             _ => EventResult::Ignored
         }
     }
-}
-
-enum Visual {
-    Unicode,
-    Ascii,
-    Off
 }
 
 struct OffsetPrinter<'a, 'b, 'x> {

@@ -5,7 +5,8 @@ use crate::hex_tables::*;
 
 pub enum VisualMode {
     Unicode,
-    Ascii
+    Ascii,
+    Off
 }
 
 pub trait OffsetsVisitor {
@@ -149,12 +150,17 @@ impl HexReader {
     fn vis_table(&self) -> &'static [&'static str; 256] {
         match self.vis_mode {
             VisualMode::Unicode => UNICODE_TEXT_TABLE,
-            VisualMode::Ascii => ASCII_TEXT_TABLE
+            VisualMode::Ascii => ASCII_TEXT_TABLE,
+            VisualMode::Off => panic!("There is no visual table for OFF visual mode.")
         }
     }
     
     pub fn set_visual_mode(&mut self, mode: VisualMode) {
         self.vis_mode = mode;
+    }
+    
+    pub fn get_visual_mode(&self) -> &VisualMode {
+        &self.vis_mode
     }
 }
 

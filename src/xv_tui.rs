@@ -32,7 +32,7 @@ pub fn run_tui(reader: HexReader, state: XvState) {
     });
 
     let hex_view = HexView::new(reader).with_id("hex_view");
-    let work_area = StackView::new().fullscreen_layer(hex_view.full_screen());
+    let work_area = StackView::new().fullscreen_layer(hex_view);
     let status_bar = new_status_bar();
 
     tui.screen_mut().add_transparent_layer(LinearLayout::vertical()
