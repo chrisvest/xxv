@@ -13,8 +13,7 @@ panic = 'abort'
 
 [dependencies]
 clap = "2.32.0"
-#cursive = "0.11.0"
-cursive = { path = "../Cursive" }
+cursive = "0.11.1"
 unicode-width = "0.1.5"
 #wl-clipboard-rs = "0.2.0" # Wayland clipboard integration.
 
