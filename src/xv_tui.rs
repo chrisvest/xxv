@@ -20,16 +20,7 @@ pub fn run_tui(reader: HexReader, state: XvState) {
     tui.add_global_callback(Key::F1, help);
     tui.add_global_callback('w', open_set_width_dialog);
     tui.add_global_callback('g', open_goto_dialog);
-    
-    tui.add_global_callback('d', |s| {
-        let new_theme = s.with_user_data(|state: &mut XvState| {
-            state.toggle_theme();
-            state.current_theme()
-        });
-        if let Some(t) = new_theme {
-            s.set_theme(t);
-        }
-    });
+    tui.add_global_callback('t', change_theme);
 
     let hex_view = HexView::new(reader).with_id("hex_view");
     let work_area = StackView::new().fullscreen_layer(hex_view);
@@ -49,4 +40,14 @@ fn quit(s: &mut Cursive) {
 
 fn help(s: &mut Cursive) {
     s.add_layer(Dialog::info("Helpful text\n\nbla bla bla..."))
+}
+
+fn change_theme(s: &mut Cursive) {
+    let new_theme = s.with_user_data(|state: &mut XvState| {
+        state.toggle_theme();
+        state.current_theme()
+    });
+    if let Some(t) = new_theme {
+        s.set_theme(t);
+    }
 }
