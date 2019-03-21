@@ -68,7 +68,7 @@ fn do_open_file(s: &mut Cursive) {
         let file_name = rc_file.as_ref();
         if let Some(reader) = s.with_user_data(|state: &mut XvState| {
             let path = state.resolve_path(file_name);
-            state.open_reader(path).expect("second")
+            state.open_reader(path).unwrap()
         }) {
             s.call_on_id("hex_view", |view: &mut HexView| {
                 view.switch_reader(reader);
