@@ -3,6 +3,9 @@ name = "xv"
 version = "0.1.0"
 authors = ["Chris Vest <mr.chrisvest@gmail.com>"]
 edition = "2018"
+description = "A hex viewer for the terminal, with a visual text user interface."
+keywords = ["hex", "binary", "ncurses"]
+license = "Apache-2.0"
 
 [profile.release]
 overflow-checks = true
