@@ -4,8 +4,6 @@ use cursive::traits::{Identifiable, Boxable};
 use cursive::event::Key;
 use crate::hex_view::HexView;
 use crate::utilities::parse_number;
-use cursive::direction::Orientation;
-use cursive::direction::Orientation::Vertical;
 
 pub fn open_set_width_dialog(s: &mut Cursive) {
     let (current_width, current_group) = get_current_width_and_group(s);
@@ -22,11 +20,11 @@ pub fn open_set_width_dialog(s: &mut Cursive) {
         .with_id("group")
         .min_width(8);
     
-    let editors = LinearLayout::new(Vertical)
+    let editors = LinearLayout::vertical()
         .child(line_width_edit)
         .child(group_edit);
     
-    let layout = LinearLayout::new(Orientation::Horizontal)
+    let layout = LinearLayout::horizontal()
         .child(TextView::new("Line width:  \nGroup:  "))
         .child(editors);
     
@@ -35,13 +33,13 @@ pub fn open_set_width_dialog(s: &mut Cursive) {
         .dismiss_button("Cancel")
         .button("Ok", do_set_widths);
     
-    let esc_view = OnEventView::new(dialog)
+    let event_view = OnEventView::new(dialog)
         .on_event(Key::Esc, |s| {
             s.pop_layer();
         })
         .on_event(Key::Enter, do_set_widths);
     
-    s.add_layer(esc_view)
+    s.add_layer(event_view)
 }
 
 fn get_current_width_and_group(s: &mut Cursive) -> (u64, u16) {

@@ -40,6 +40,12 @@ impl HexView {
         }
     }
     
+    pub fn switch_reader(&mut self, reader: HexReader) {
+        self.reader = reader;
+        self.invalidated_data_changed = true;
+        self.invalidated_resize = true;
+    }
+    
     pub fn go_to_offset(&mut self, offset: u64) {
         let line = offset / self.reader.line_width;
         let line_offset = offset % self.reader.line_width;
@@ -345,6 +351,8 @@ struct HexPrinter<'a, 'b, 'x> {
     printer: &'x Printer<'a, 'b>
 }
 
+const GROUP_SEP: &str = "\u{00A6}";
+
 impl<'a, 'b, 'x> HexVisitor for HexPrinter<'a, 'b, 'x> {
     fn byte(&mut self, byte: &str, category: &ByteCategory) {
         if self.pos.x != 0 {
@@ -358,7 +366,7 @@ impl<'a, 'b, 'x> HexVisitor for HexPrinter<'a, 'b, 'x> {
     }
 
     fn group(&mut self) {
-        self.printer.print(self.pos, "┊");
+        self.printer.print(self.pos, GROUP_SEP);
     }
 
     fn next_line(&mut self) {
@@ -387,7 +395,7 @@ impl<'a, 'b, 'x> VisualVisitor for VisualPrinter<'a, 'b, 'x> {
     }
 
     fn group(&mut self) {
-        self.printer.print(self.pos, "┊");
+        self.printer.print(self.pos, GROUP_SEP);
         self.pos.x += 1;
     }
 

@@ -9,6 +9,7 @@ use crate::hex_view::HexView;
 use crate::set_width_dialog::open_set_width_dialog;
 use crate::status_bar::new_status_bar;
 use crate::xv_state::XvState;
+use crate::open_file_dialog::open_file_dialog;
 
 pub fn run_tui(reader: HexReader, state: XvState) {
     let mut tui = Cursive::default();
@@ -21,6 +22,7 @@ pub fn run_tui(reader: HexReader, state: XvState) {
     tui.add_global_callback('w', open_set_width_dialog);
     tui.add_global_callback('g', open_goto_dialog);
     tui.add_global_callback('t', change_theme);
+    tui.add_global_callback('o', open_file_dialog);
 
     let hex_view = HexView::new(reader).with_id("hex_view");
     let work_area = StackView::new().fullscreen_layer(hex_view);

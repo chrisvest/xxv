@@ -16,6 +16,7 @@ mod hex_reader;
 mod hex_view;
 mod set_width_dialog;
 mod goto_dialog;
+mod open_file_dialog;
 mod status_bar;
 mod xv_tui;
 
