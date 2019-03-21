@@ -52,6 +52,12 @@ impl XvState {
         &self.current_dir
     }
     
+    pub fn resolve_path(&self, file_name: &OsStr) -> PathBuf {
+        let mut cloned_buf = self.current_dir.clone();
+        cloned_buf.push(file_name);
+        cloned_buf
+    }
+    
     pub fn toggle_theme(&mut self) {
         self.theme = !self.theme;
     }
