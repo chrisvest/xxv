@@ -16,7 +16,7 @@ pub trait OffsetsVisitor {
 }
 
 pub trait HexVisitor {
-    fn byte(&mut self, byte: &str, category: &ByteCategory);
+    fn byte(&mut self, index: usize);
     
     fn group(&mut self);
     
@@ -26,7 +26,7 @@ pub trait HexVisitor {
 }
 
 pub trait VisualVisitor {
-    fn visual_element(&mut self, element: &str, category: &ByteCategory);
+    fn visual_element(&mut self, index: usize);
     
     fn group(&mut self);
     
@@ -113,7 +113,7 @@ impl HexReader {
         for b in cap {
             i += 1;
             let r = *b as usize;
-            visitor.byte(BYTE_RENDER[r], &BYTE_CATEGORY[r]);
+            visitor.byte(r);
             
             if i == self.window_size.0 {
                 visitor.next_line();
@@ -128,13 +128,12 @@ impl HexReader {
     
     pub fn visit_visual(&self, visitor: &mut VisualVisitor) {
         let cap = self.capture.as_slice();
-        let table = self.vis_table();
 
         let mut i = 0;
         for b in cap {
             i += 1;
             let r = *b as usize;
-            visitor.visual_element(table[r], &BYTE_CATEGORY[r]);
+            visitor.visual_element(r);
 
             if i == self.window_size.0 {
                 visitor.next_line();
@@ -151,8 +150,27 @@ impl HexReader {
         match self.vis_mode {
             VisualMode::Unicode => UNICODE_TEXT_TABLE,
             VisualMode::Ascii => ASCII_TEXT_TABLE,
-            VisualMode::Off => panic!("There is no visual table for OFF visual mode.")
+            VisualMode::Off => ASCII_TEXT_TABLE
         }
+    }
+
+    pub fn map_hex_table<F, T>(&self, callback: F) -> Vec<T>
+        where F: Fn(&ByteCategory, &'static str) -> T {
+        let mut vec = Vec::with_capacity(BYTE_RENDER.len());
+        for i in 0..BYTE_RENDER.len() {
+            vec.push(callback(&BYTE_CATEGORY[i], BYTE_RENDER[i]));
+        }
+        vec
+    }
+    
+    pub fn map_visual_table<F, T>(&self, callback: F) -> Vec<T>
+        where F: Fn(&ByteCategory, &'static str) -> T {
+        let tbl = self.vis_table();
+        let mut vec = Vec::with_capacity(tbl.len());
+        for i in 0..tbl.len() {
+            vec.push(callback(&BYTE_CATEGORY[i], tbl[i]));
+        }
+        vec
     }
     
     pub fn set_visual_mode(&mut self, mode: VisualMode) {
@@ -182,8 +200,8 @@ mod tests {
     }
     
     impl HexVisitor for String {
-        fn byte(&mut self, byte: &str, _category: &ByteCategory) {
-            self.push_str(byte);
+        fn byte(&mut self, index: usize) {
+            self.push_str(BYTE_RENDER[index]);
             self.push(' ');
         }
 

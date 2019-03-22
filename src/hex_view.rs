@@ -11,6 +11,7 @@ use crate::hex_reader::OffsetsVisitor;
 use crate::hex_reader::HexVisitor;
 use crate::hex_tables::ByteCategory;
 use cursive::utils::span::*;
+use cursive::utils::markup::StyledString;
 
 pub struct HexView {
     reader: HexReader,
@@ -23,6 +24,8 @@ pub struct HexView {
     hex_column_size: Vec2,
     visual_column_pos: Vec2,
     visual_column_size: Vec2,
+    prestyled_hex_table: Vec<StyledString>,
+    prestyled_visual_table: Vec<StyledString>
 }
 
 impl HexView {
@@ -38,6 +41,8 @@ impl HexView {
             hex_column_size: Vec2::new(0, 0),
             visual_column_pos: Vec2::new(0, 0),
             visual_column_size: Vec2::new(0, 0),
+            prestyled_hex_table: Vec::new(),
+            prestyled_visual_table: Vec::new()
         }
     }
     
@@ -80,6 +85,7 @@ impl HexView {
     }
     
     fn toggle_visual(&mut self) -> EventResult {
+        self.prestyled_visual_table.clear();
         match self.reader.get_visual_mode() {
             VisualMode::Unicode => {
                 self.reader.set_visual_mode(VisualMode::Ascii);
@@ -187,6 +193,18 @@ impl HexView {
             }
         });
     }
+    
+    fn build_prestyled_hex_table(&mut self) {
+        self.prestyled_hex_table = self.reader.map_hex_table(|category, s| {
+            StyledString::styled(s, category_to_color(category))
+        });
+    }
+    
+    fn build_prestyled_visual_table(&mut self) {
+        self.prestyled_visual_table = self.reader.map_visual_table(|category, s| {
+            StyledString::styled(s, category_to_color(category))
+        });
+    }
 }
 
 impl View for HexView {
@@ -208,6 +226,7 @@ impl View for HexView {
         let mut hex_printer = HexPrinter {
             max_width: 0,
             pos: Vec2::new(0, 0),
+            table: &self.prestyled_hex_table,
             printer: &printer.offset(self.hex_column_pos).cropped(self.hex_column_size)
         };
         self.reader.visit_hex(&mut hex_printer);
@@ -218,6 +237,7 @@ impl View for HexView {
             
             let mut visual_printer = VisualPrinter {
                 pos: Vec2::new(0,0),
+                table: &self.prestyled_visual_table,
                 printer: &printer.offset(self.visual_column_pos).cropped(self.visual_column_size)
             };
             self.reader.visit_visual(&mut visual_printer);
@@ -225,6 +245,12 @@ impl View for HexView {
     }
 
     fn layout(&mut self, constraint: Vec2) {
+        if self.prestyled_hex_table.is_empty() {
+            self.build_prestyled_hex_table();
+        }
+        if self.prestyled_visual_table.is_empty() {
+            self.build_prestyled_visual_table();
+        }
         if self.invalidated_resize {
             // The viewing area changed size, or the visual column was toggled.
 
@@ -357,20 +383,18 @@ impl<'a, 'b, 'x> OffsetsVisitor for OffsetPrinter<'a, 'b, 'x> {
 struct HexPrinter<'a, 'b, 'x> {
     max_width: usize,
     pos: Vec2,
+    table: &'x [StyledString],
     printer: &'x Printer<'a, 'b>
 }
 
 const GROUP_SEP: &str = "\u{00A6}";
 
 impl<'a, 'b, 'x> HexVisitor for HexPrinter<'a, 'b, 'x> {
-    fn byte(&mut self, byte: &str, category: &ByteCategory) {
+    fn byte(&mut self, index: usize) {
         if self.pos.x != 0 {
             self.pos.x += 1;
         }
-        let color = category_to_color(category);
-        self.printer.with_color(color, |p| {
-            p.print(self.pos, byte);
-        });
+        self.printer.print_styled(self.pos, (&self.table[index]).into());
         self.pos.x += 2;
     }
 
@@ -391,16 +415,15 @@ impl<'a, 'b, 'x> HexVisitor for HexPrinter<'a, 'b, 'x> {
 
 struct VisualPrinter<'a, 'b, 'x> {
     pos: Vec2,
+    table: &'x [StyledString],
     printer: &'x Printer<'a, 'b>
 }
 
 impl<'a, 'b, 'x> VisualVisitor for VisualPrinter<'a, 'b, 'x> {
-    fn visual_element(&mut self, element: &str, category: &ByteCategory) {
-        let color = category_to_color(category);
-        self.printer.with_color(color, |p| {
-            p.print(self.pos, element);
-        });
-        self.pos.x += element.width();
+    fn visual_element(&mut self, index: usize) {
+        let vis_element = &self.table[index];
+        self.printer.print_styled(self.pos, vis_element.into());
+        self.pos.x += vis_element.width();
     }
 
     fn group(&mut self) {
