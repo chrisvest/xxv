@@ -12,7 +12,7 @@ pub fn open_file_dialog(s: &mut Cursive) {
         .on_submit(select_directory)
         .autojump();
     let file_selector: SelectView<OsString> = SelectView::new().autojump();
-    
+
     let layout = LinearLayout::vertical()
         .child(TextView::new("").center().effect(Effect::Bold).with_id("current_dir"))
         .child(DummyView)

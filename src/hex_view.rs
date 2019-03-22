@@ -5,11 +5,12 @@ use cursive::event::{Event, Key, MouseEvent};
 use cursive::event::EventResult;
 use cursive::Vec2;
 use cursive::align::HAlign;
-use cursive::theme::ColorStyle;
+use cursive::theme::{ColorStyle, Style};
 use unicode_width::UnicodeWidthStr;
 use crate::hex_reader::OffsetsVisitor;
 use crate::hex_reader::HexVisitor;
 use crate::hex_tables::ByteCategory;
+use cursive::utils::span::*;
 
 pub struct HexView {
     reader: HexReader,
@@ -195,7 +196,8 @@ impl View for HexView {
         
         let mut offset_printer = OffsetPrinter {
             pos: Vec2::new(0, 0),
-            printer: &printer.offset(self.offsets_column_pos).cropped(self.offsets_column_size)
+            printer: &printer.offset(self.offsets_column_pos).cropped(self.offsets_column_size),
+            spans: Vec::with_capacity(1)
         };
         self.reader.visit_row_offsets(&mut offset_printer);
         
@@ -329,14 +331,21 @@ impl View for HexView {
 
 struct OffsetPrinter<'a, 'b, 'x> {
     pos: Vec2,
-    printer: &'x Printer<'a, 'b>
+    printer: &'x Printer<'a, 'b>,
+    spans: Vec<IndexedSpan<Style>>
 }
 
 impl<'a, 'b, 'x> OffsetsVisitor for OffsetPrinter<'a, 'b, 'x> {
     fn offset(&mut self, offset: &str) {
-        self.printer.with_color(ColorStyle::secondary(), |p| {
-            p.print(self.pos, offset);
-        });
+        if self.spans.is_empty() {
+            self.spans.push(IndexedSpan {
+                content: IndexedCow::Borrowed {start: 0, end: offset.len()},
+                attr: Style::from(ColorStyle::secondary()),
+                width: offset.width()
+            });
+        }
+        let styled_offset = SpannedStr::new(offset, &self.spans);
+        self.printer.print_styled(self.pos, styled_offset);
         self.pos.y += 1;
     }
 

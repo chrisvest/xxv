@@ -32,6 +32,8 @@ impl XvState {
     }
     
     pub fn open_reader<P: AsRef<Path>>(&mut self, file_name: P) -> Result<HexReader> {
+        // todo record the currently open file in a "recently opened files" vector.
+        // todo also record the settings, like line width, of the "currently open reader" in this vector.
         let b_reader = TilingByteReader::new(file_name)?;
         HexReader::new(b_reader)
     }
