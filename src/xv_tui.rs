@@ -1,7 +1,7 @@
 use cursive::Cursive;
 use cursive::event::Key;
 use cursive::traits::{Boxable, Identifiable};
-use cursive::views::{Dialog, LinearLayout, StackView};
+use cursive::views::{Dialog, LinearLayout};
 
 use crate::goto_dialog::open_goto_dialog;
 use crate::hex_reader::HexReader;
@@ -25,11 +25,10 @@ pub fn run_tui(reader: HexReader, state: XvState) {
     tui.add_global_callback('o', open_file_dialog);
 
     let hex_view = HexView::new(reader).with_id("hex_view");
-    let work_area = StackView::new().fullscreen_layer(hex_view);
     let status_bar = new_status_bar();
 
     tui.screen_mut().add_transparent_layer(LinearLayout::vertical()
-        .child(work_area)
+        .child(hex_view)
         .child(status_bar)
         .full_screen());
 

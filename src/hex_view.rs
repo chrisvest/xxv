@@ -169,6 +169,12 @@ impl HexView {
         }
     }
     
+    fn draw_bg(&self, printer: &Printer) {
+        for y in 0..printer.size.y {
+            printer.print_hline((0, y), printer.size.x, " ");
+        }
+    }
+    
     fn draw_title(&self, printer: &Printer) {
         let title = self.reader.file_name();
         let mut len = title.width();
@@ -209,6 +215,7 @@ impl HexView {
 
 impl View for HexView {
     fn draw(&self, printer: &Printer) {
+        self.draw_bg(printer);
         printer.print_box((0, 0), printer.size, true);
         self.draw_title(printer);
         
