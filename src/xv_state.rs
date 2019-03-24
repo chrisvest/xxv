@@ -1,26 +1,29 @@
+use std::env;
+use std::ffi::OsStr;
+use std::fs;
+use std::fs::{create_dir_all, File, OpenOptions};
 use std::io::Result;
 use std::path::{Path, PathBuf};
-use std::env;
-
-use directories::BaseDirs;
 
 use cursive::theme::{Palette, Theme};
 use cursive::theme::BaseColor::*;
 use cursive::theme::Color::*;
+use directories::{BaseDirs, ProjectDirs};
+use serde_derive::{Deserialize, Serialize};
 
 use crate::byte_reader::TilingByteReader;
 use crate::hex_reader::{HexReader, VisualMode};
-use std::fs;
-use std::ffi::OsStr;
+use serde::ser::Serialize;
+use rmp_serde::Serializer;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ReaderState {
     path: PathBuf,
     line_width: u64,
     group: u16,
     window_pos: (u64,u64),
     window_size: (u16,u16),
-    vis_mode: VisualMode
+    vis_mode: String
 }
 
 impl ReaderState {
@@ -31,7 +34,7 @@ impl ReaderState {
             group: reader.group,
             window_pos: reader.window_pos,
             window_size: reader.window_size,
-            vis_mode: reader.vis_mode,
+            vis_mode: reader.vis_mode.into(),
         }
     }
 }
@@ -42,6 +45,28 @@ impl PartialEq for ReaderState {
     }
 }
 
+impl From<VisualMode> for String {
+    fn from(mode: VisualMode) -> Self {
+        match mode {
+            VisualMode::Unicode => String::from("Unicode"),
+            VisualMode::Ascii => String::from("Ascii"),
+            VisualMode::Off => String::from("Off"),
+        }
+    }
+}
+
+impl From<String> for VisualMode {
+    fn from(mode: String) -> Self {
+        match mode.as_str() {
+            "Unicode" => VisualMode::Unicode,
+            "Ascii" => VisualMode::Ascii,
+            "Off" => VisualMode::Off,
+            _ => VisualMode::Unicode
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct XvState {
     theme: bool,
     current_dir: PathBuf,
@@ -49,7 +74,19 @@ pub struct XvState {
 }
 
 impl XvState {
-    pub fn new() -> XvState {
+    pub fn load() -> XvState {
+        if let Some(project_dirs) = ProjectDirs::from("io.github.chrisvest", "", "xv") {
+            let mut state_path = project_dirs.config_dir().to_owned();
+            state_path.push("xv.state");
+            
+            if let Ok(state_file) = File::open(state_path) {
+                let result = rmp_serde::from_read(state_file);
+                if let Ok(state) = result {
+                    return state;
+                }
+            }
+        }
+        
         let current_dir = env::current_dir().unwrap_or_else(|_e| {
             let user_dirs = BaseDirs::new();
             if let Some(ud) = user_dirs {
@@ -59,6 +96,22 @@ impl XvState {
             }
         });
         XvState {theme: true, current_dir, recent_files: Vec::new()}
+    }
+    
+    pub fn store(&mut self) {
+        let pd = ProjectDirs::from("io.github.chrisvest", "", "xv");
+        if let Some(project_dirs) = pd {
+            let mut state_path = project_dirs.config_dir().to_owned();
+            create_dir_all(&state_path).unwrap();
+            state_path.push("xv.state");
+
+            let mut open_options = OpenOptions::new();
+            open_options.create(true).write(true).truncate(true);
+            if let Ok(state_file) = open_options.open(state_path) {
+                let mut serializer = Serializer::new(state_file);
+                self.serialize(&mut serializer).unwrap();
+            }
+        }
     }
     
     pub fn open_reader<P: AsRef<Path>>(&mut self, file_name: P) -> Result<HexReader> {

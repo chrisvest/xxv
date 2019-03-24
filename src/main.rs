@@ -15,6 +15,8 @@
 #![forbid(unsafe_code)]
 #[macro_use]
 extern crate clap;
+extern crate serde;
+extern crate serde_derive;
 
 use std::io::Result;
 
@@ -45,7 +47,7 @@ fn main() -> Result<()> {
         .get_matches();
 
     // todo support opening multiple files at once
-    let mut state = XvState::new();
+    let mut state = XvState::load();
     let file_name = matches.value_of_os("file").unwrap();
     let h_reader = state.open_reader(file_name)?;
     xv_tui::run_tui(h_reader, state);

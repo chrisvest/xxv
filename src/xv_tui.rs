@@ -6,10 +6,10 @@ use cursive::views::{Dialog, LinearLayout};
 use crate::goto_dialog::open_goto_dialog;
 use crate::hex_reader::HexReader;
 use crate::hex_view::HexView;
+use crate::open_file_dialog::open_file_dialog;
 use crate::set_width_dialog::open_set_width_dialog;
 use crate::status_bar::new_status_bar;
 use crate::xv_state::XvState;
-use crate::open_file_dialog::open_file_dialog;
 
 pub fn run_tui(reader: HexReader, state: XvState) {
     let mut tui = Cursive::default();
@@ -36,6 +36,13 @@ pub fn run_tui(reader: HexReader, state: XvState) {
 }
 
 fn quit(s: &mut Cursive) {
+    let reader_state = s.call_on_id("hex_view", |view: &mut HexView| {
+        view.get_reader_state()
+    }).unwrap();
+    s.with_user_data(|state: &mut XvState| {
+        state.close_reader(reader_state);
+        state.store();
+    });
     s.quit()
 }
 
