@@ -66,8 +66,12 @@ fn do_open_file(s: &mut Cursive) {
     let file_selector = s.find_id::<SelectView<OsString>>("file_selector").unwrap();
     if let Some(rc_file) = file_selector.selection() {
         let file_name = rc_file.as_ref();
+        let current_file = s.call_on_id("hex_view", |view: &mut HexView| {
+            view.get_reader_state()
+        }).unwrap();
         if let Some(reader) = s.with_user_data(|state: &mut XvState| {
             let path = state.resolve_path(file_name);
+            state.close_reader(current_file);
             state.open_reader(path).unwrap()
         }) {
             s.call_on_id("hex_view", |view: &mut HexView| {

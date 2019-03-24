@@ -3,10 +3,12 @@ use std::io::Read;
 use std::io::Result;
 use std::io::Seek;
 use std::io::SeekFrom;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
+#[derive(Debug)]
 pub struct TilingByteReader {
     file: File,
+    path: PathBuf,
     length: u64,
     use_large_addresses: bool,
     display_name: String
@@ -16,12 +18,15 @@ pub type Window = (u64, u64, u16, u16);
 
 impl TilingByteReader {
     pub fn new<P: AsRef<Path>>(file_name: P) -> Result<TilingByteReader> {
-        let display_name: String = file_name.as_ref().file_name().unwrap().to_string_lossy().into();
+        let path_ref = file_name.as_ref();
+        let path_buf = PathBuf::from(path_ref);
+        let display_name: String = path_ref.file_name().unwrap().to_string_lossy().into();
         let file = File::open(file_name)?;
         let file_len = file.metadata()?.len();
 
         Ok(TilingByteReader {
             file,
+            path: path_buf,
             length: file_len,
             use_large_addresses: file_len > u64::from(std::u32::MAX),
             display_name
@@ -30,6 +35,10 @@ impl TilingByteReader {
     
     pub fn file_name(&self) -> &str {
         &self.display_name
+    }
+    
+    pub fn get_path_clone(&self) -> PathBuf {
+        self.path.clone()
     }
 
     pub fn get_window(&mut self, window: Window, line_length: u64, buf: &mut Vec<u8>) -> Result<()> {

@@ -12,6 +12,7 @@ use crate::hex_reader::HexVisitor;
 use crate::hex_tables::ByteCategory;
 use cursive::utils::span::*;
 use cursive::utils::markup::StyledString;
+use crate::xv_state::ReaderState;
 
 pub struct HexView {
     reader: HexReader,
@@ -50,6 +51,10 @@ impl HexView {
         self.reader = reader;
         self.invalidated_data_changed = true;
         self.invalidated_resize = true;
+    }
+    
+    pub fn get_reader_state(&self) -> ReaderState {
+        ReaderState::new(&self.reader)
     }
     
     pub fn go_to_offset(&mut self, offset: u64) {

@@ -9,13 +9,43 @@ use cursive::theme::BaseColor::*;
 use cursive::theme::Color::*;
 
 use crate::byte_reader::TilingByteReader;
-use crate::hex_reader::HexReader;
+use crate::hex_reader::{HexReader, VisualMode};
 use std::fs;
 use std::ffi::OsStr;
+
+#[derive(Debug)]
+pub struct ReaderState {
+    path: PathBuf,
+    line_width: u64,
+    group: u16,
+    window_pos: (u64,u64),
+    window_size: (u16,u16),
+    vis_mode: VisualMode
+}
+
+impl ReaderState {
+    pub fn new(reader: &HexReader) -> ReaderState {
+        ReaderState {
+            path: reader.get_path(),
+            line_width: reader.line_width,
+            group: reader.group,
+            window_pos: reader.window_pos,
+            window_size: reader.window_size,
+            vis_mode: reader.vis_mode,
+        }
+    }
+}
+
+impl PartialEq for ReaderState {
+    fn eq(&self, other: &Self) -> bool {
+        self.path.eq(&other.path)
+    }
+}
 
 pub struct XvState {
     theme: bool,
     current_dir: PathBuf,
+    recent_files: Vec<ReaderState>
 }
 
 impl XvState {
@@ -28,14 +58,46 @@ impl XvState {
                 PathBuf::default()
             }
         });
-        XvState {theme: true, current_dir}
+        XvState {theme: true, current_dir, recent_files: Vec::new()}
     }
     
     pub fn open_reader<P: AsRef<Path>>(&mut self, file_name: P) -> Result<HexReader> {
-        // todo record the currently open file in a "recently opened files" vector.
-        // todo also record the settings, like line width, of the "currently open reader" in this vector.
         let b_reader = TilingByteReader::new(file_name)?;
-        HexReader::new(b_reader)
+        match HexReader::new(b_reader) {
+            Ok(mut reader) => {
+                let lookup_state = ReaderState::new(&reader);
+                if let Some(index) = self.index_of(&lookup_state) {
+                    let state = &self.recent_files[index];
+                    reader.line_width = state.line_width;
+                    reader.group = state.group;
+                    reader.window_pos = state.window_pos;
+                    reader.window_size = state.window_size;
+                };
+                Ok(reader)
+            },
+            err => err
+        }
+    }
+    
+    pub fn close_reader(&mut self, reader: ReaderState) {
+        if let Some(index) = self.index_of(&reader) {
+            self.recent_files.remove(index);
+            self.recent_files.push(reader);
+        } else if self.recent_files.len() >= 50 {
+            self.recent_files.remove(0);
+            self.recent_files.push(reader);
+        } else {
+            self.recent_files.push(reader);
+        }
+    }
+    
+    fn index_of(&self, reader: &ReaderState) -> Option<usize> {
+        for i in 0..self.recent_files.len() {
+            if self.recent_files[i].eq(reader) {
+                return Some(i);
+            }
+        }
+        None
     }
     
     pub fn change_directory(&mut self, cd: &OsStr) {

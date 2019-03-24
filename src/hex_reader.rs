@@ -2,7 +2,9 @@ use std::io::Result;
 
 use crate::byte_reader::TilingByteReader;
 use crate::hex_tables::*;
+use std::path::PathBuf;
 
+#[derive(Copy, Clone, Debug)]
 pub enum VisualMode {
     Unicode,
     Ascii,
@@ -35,6 +37,7 @@ pub trait VisualVisitor {
     fn end(&mut self);
 }
 
+#[derive(Debug)]
 pub struct HexReader {
     reader: TilingByteReader,
     pub line_width: u64,
@@ -42,7 +45,7 @@ pub struct HexReader {
     pub window_pos: (u64,u64),
     pub window_size: (u16,u16),
     capture: Vec<u8>,
-    vis_mode: VisualMode
+    pub vis_mode: VisualMode
 }
 
 impl HexReader {
@@ -60,6 +63,10 @@ impl HexReader {
     
     pub fn file_name(&self) -> &str {
         self.reader.file_name()
+    }
+    
+    pub fn get_path(&self) -> PathBuf {
+        self.reader.get_path_clone()
     }
     
     pub fn get_length(&self) -> u64 {
