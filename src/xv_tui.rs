@@ -13,6 +13,7 @@ use crate::xv_state::XvState;
 
 pub fn run_tui(reader: HexReader, state: XvState) {
     let mut tui = Cursive::default();
+    tui.set_theme(state.current_theme());
     tui.set_user_data(state);
     
     tui.add_global_callback('q', quit);
