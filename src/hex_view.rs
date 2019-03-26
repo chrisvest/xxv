@@ -109,6 +109,16 @@ impl HexView {
         EventResult::Consumed(None)
     }
     
+    fn reload_data(&mut self) -> EventResult {
+        self.invalidated_data_changed = true;
+        EventResult::Consumed(None)
+    }
+    
+    fn reopen_and_reload_data(&mut self) -> EventResult {
+        self.reader.reopen().unwrap();
+        self.reload_data()
+    }
+    
     fn on_char_event(&mut self, c: char) -> EventResult {
         match c {
             'j' => self.on_key_event(Key::Down),
@@ -116,6 +126,8 @@ impl HexView {
             'h' => self.on_key_event(Key::Left),
             'l' => self.on_key_event(Key::Right),
             'v' => self.toggle_visual(),
+            'r' => self.reload_data(),
+            'R' => self.reopen_and_reload_data(),
             _ => EventResult::Ignored
         }
     }

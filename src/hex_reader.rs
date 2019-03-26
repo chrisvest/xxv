@@ -61,6 +61,10 @@ impl HexReader {
         })
     }
     
+    pub fn reopen(&mut self) -> Result<()> {
+        self.reader.reopen()
+    }
+    
     pub fn file_name(&self) -> &str {
         self.reader.file_name()
     }
