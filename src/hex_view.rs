@@ -122,9 +122,13 @@ impl HexView {
     fn on_char_event(&mut self, c: char) -> EventResult {
         match c {
             'j' => self.on_key_event(Key::Down),
+            'J' => self.on_key_event(Key::PageDown),
             'k' => self.on_key_event(Key::Up),
+            'K' => self.on_key_event(Key::PageUp),
             'h' => self.on_key_event(Key::Left),
+            'H' => self.on_key_event(Key::Home),
             'l' => self.on_key_event(Key::Right),
+            'L' => self.on_key_event(Key::End),
             'v' => self.toggle_visual(),
             'r' => self.reload_data(),
             'R' => self.reopen_and_reload_data(),
