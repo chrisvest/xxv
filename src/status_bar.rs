@@ -24,9 +24,7 @@ pub fn new_status_bar() -> PaddedView<LinearLayout> {
     hints_bar_string.append_styled("idth   ", hints_style);
 
     let hints_bar = TextView::new(hints_bar_string);
-    let progress_bar = TextView::new(StyledString::styled("progress bar", hints_style));
 
     PaddedView::new((1, 1, 0, 0), LinearLayout::horizontal()
-        .child(hints_bar.full_width())
-        .child(progress_bar))
+        .child(hints_bar.full_width()))
 }
