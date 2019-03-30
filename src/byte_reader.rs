@@ -18,9 +18,8 @@ pub type Window = (u64, u64, u16, u16);
 
 impl TilingByteReader {
     pub fn new<P: AsRef<Path>>(file_name: P) -> Result<TilingByteReader> {
-        let path_ref = file_name.as_ref();
-        let path_buf = PathBuf::from(path_ref);
-        let display_name: String = path_ref.file_name().unwrap().to_string_lossy().into();
+        let path_buf = file_name.as_ref().canonicalize()?;
+        let display_name: String = path_buf.file_name().unwrap().to_string_lossy().into();
         let file = File::open(file_name)?;
         let file_len = file.metadata()?.len();
 

@@ -37,6 +37,10 @@ impl ReaderState {
             vis_mode: reader.vis_mode.into(),
         }
     }
+    
+    pub fn path(&self) -> &Path {
+        self.path.as_path()
+    }
 }
 
 impl PartialEq for ReaderState {
@@ -125,6 +129,7 @@ impl XvState {
                     reader.group = state.group;
                     reader.window_pos = state.window_pos;
                     reader.window_size = state.window_size;
+                    &self.recent_files.remove(index);
                 };
                 Ok(reader)
             },
@@ -151,6 +156,10 @@ impl XvState {
             }
         }
         None
+    }
+    
+    pub fn recent_files(&self) -> &[ReaderState] {
+        &self.recent_files
     }
     
     pub fn change_directory(&mut self, cd: &OsStr) {

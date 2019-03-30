@@ -33,6 +33,7 @@ mod hex_view;
 mod set_width_dialog;
 mod goto_dialog;
 mod open_file_dialog;
+mod switch_file_dialog;
 mod status_bar;
 mod xv_tui;
 
@@ -46,7 +47,6 @@ fn main() -> Result<()> {
             .required(true))
         .get_matches();
 
-    // todo support opening multiple files at once
     let mut state = XvState::load();
     let file_name = matches.value_of_os("file").unwrap();
     let h_reader = state.open_reader(file_name)?;
