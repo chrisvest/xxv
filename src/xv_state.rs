@@ -129,7 +129,7 @@ impl XvState {
                     reader.group = state.group;
                     reader.window_pos = state.window_pos;
                     reader.window_size = state.window_size;
-                    &self.recent_files.remove(index);
+                    self.recent_files.remove(index);
                 };
                 Ok(reader)
             },
