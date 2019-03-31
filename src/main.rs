@@ -35,6 +35,7 @@ mod goto_dialog;
 mod open_file_dialog;
 mod switch_file_dialog;
 mod status_bar;
+mod help_text;
 mod xv_tui;
 
 fn main() -> Result<()> {

@@ -12,6 +12,7 @@ use crate::status_bar::new_status_bar;
 use crate::switch_file_dialog::switch_file_dialog;
 use crate::xv_state::XvState;
 use std::io::Error;
+use crate::help_text::show_help;
 
 pub fn run_tui(reader: HexReader, state: XvState) {
     let mut tui = Cursive::default();
@@ -20,8 +21,8 @@ pub fn run_tui(reader: HexReader, state: XvState) {
     
     tui.add_global_callback('q', quit);
     tui.add_global_callback(Key::Esc, quit);
-    tui.add_global_callback('?', help);
-    tui.add_global_callback(Key::F1, help);
+    tui.add_global_callback('?', show_help);
+    tui.add_global_callback(Key::F1, show_help);
     tui.add_global_callback('w', open_set_width_dialog);
     tui.add_global_callback('g', open_goto_dialog);
     tui.add_global_callback('t', change_theme);
@@ -48,10 +49,6 @@ fn quit(s: &mut Cursive) {
         state.store();
     });
     s.quit()
-}
-
-fn help(s: &mut Cursive) {
-    s.add_layer(Dialog::info("Helpful text\n\nbla bla bla..."))
 }
 
 fn change_theme(s: &mut Cursive) {

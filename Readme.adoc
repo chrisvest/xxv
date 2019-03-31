@@ -5,3 +5,4 @@ Licensed under the Apache-2.0 software license.
 
 image::screenshot.png[Screenshot showing the XV hex viewer in a terminal]
 
+include::src/help_text.md[]
