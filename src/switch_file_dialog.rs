@@ -5,6 +5,7 @@ use cursive::event::Key;
 use crate::xv_state::XvState;
 use crate::hex_view::HexView;
 use std::ffi::OsString;
+use crate::xv_tui::ShowError;
 
 pub fn switch_file_dialog(s: &mut Cursive) {
     let mut file_selector: SelectView<OsString> = SelectView::new().autojump();
@@ -41,22 +42,28 @@ pub fn switch_file_dialog(s: &mut Cursive) {
 
 fn do_switch_file(s: &mut Cursive) {
     let file_selector = s.find_id::<SelectView<OsString>>("file_selector").unwrap();
+    s.pop_layer();
     if let Some(rc_file) = file_selector.selection() {
         let file_name = rc_file.as_ref();
         let current_file = s.call_on_id("hex_view", |view: &mut HexView| {
             view.get_reader_state()
         }).unwrap();
-        if let Some(reader) = s.with_user_data(|state: &mut XvState| {
+        if let Some(reader_result) = s.with_user_data(|state: &mut XvState| {
             let path = state.resolve_path(file_name);
             state.close_reader(current_file);
-            state.open_reader(path).unwrap()
+            state.open_reader(path)
         }) {
-            s.call_on_id("hex_view", |view: &mut HexView| {
-                view.switch_reader(reader);
-            });
+            match reader_result {
+                Ok(reader) => s.call_on_id("hex_view", |view: &mut HexView| {
+                    view.switch_reader(reader);
+                }),
+                Err(error) => {
+                    s.show_error(error);
+                    None
+                }
+            };
         }
     }
-    s.pop_layer();
 }
 
 fn remove_selected_file(s: &mut Cursive) {

@@ -1,7 +1,7 @@
 use cursive::Cursive;
 use cursive::event::Key;
 use cursive::traits::{Boxable, Identifiable};
-use cursive::views::{Dialog, LinearLayout};
+use cursive::views::{Dialog, LinearLayout, TextView};
 
 use crate::goto_dialog::open_goto_dialog;
 use crate::hex_reader::HexReader;
@@ -11,6 +11,7 @@ use crate::set_width_dialog::open_set_width_dialog;
 use crate::status_bar::new_status_bar;
 use crate::switch_file_dialog::switch_file_dialog;
 use crate::xv_state::XvState;
+use std::io::Error;
 
 pub fn run_tui(reader: HexReader, state: XvState) {
     let mut tui = Cursive::default();
@@ -60,5 +61,16 @@ fn change_theme(s: &mut Cursive) {
     });
     if let Some(t) = new_theme {
         s.set_theme(t);
+    }
+}
+
+pub trait ShowError {
+    fn show_error(&mut self, error: Error);
+}
+
+impl ShowError for Cursive {
+    fn show_error(&mut self, error: Error) {
+        self.add_layer(Dialog::info("Error").content(
+            TextView::new(format!("{}", error))));
     }
 }

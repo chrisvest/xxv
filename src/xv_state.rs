@@ -174,8 +174,17 @@ impl XvState {
         }
     }
     
-    pub fn list_directory(&self) -> Result<fs::ReadDir> {
+    pub fn set_directory(&mut self, path: PathBuf) {
+        self.current_dir = path;
+    }
+    
+    pub fn list_directory(&mut self) -> Result<fs::ReadDir> {
         fs::read_dir(&self.current_dir)
+    }
+    
+    pub fn reset_current_directory(&mut self) -> Result<()> {
+        self.current_dir = env::current_dir()?;
+        Ok(())
     }
     
     pub fn current_directory(&self) -> &Path {
