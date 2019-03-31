@@ -20,8 +20,8 @@ pub fn switch_file_dialog(s: &mut Cursive) {
     
     let layout = LinearLayout::vertical()
         .child(ScrollView::new(file_selector.with_id("file_selector"))
-            .scroll_x(true).full_height())
-        .fixed_height((s.screen_size().y - 11).min(50))
+            .scroll_x(true))
+        .max_height((s.screen_size().y - 11).min(50))
         .max_width((s.screen_size().x - 20).min(80));
     
     let file_switcher = Dialog::new()

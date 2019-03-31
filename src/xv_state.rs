@@ -74,7 +74,8 @@ impl From<String> for VisualMode {
 pub struct XvState {
     theme: bool,
     current_dir: PathBuf,
-    recent_files: Vec<ReaderState>
+    max_recent_files: usize,
+    recent_files: Vec<ReaderState>,
 }
 
 impl XvState {
@@ -99,7 +100,13 @@ impl XvState {
                 PathBuf::default()
             }
         });
-        XvState {theme: true, current_dir, recent_files: Vec::new()}
+        
+        XvState {
+            theme: true,
+            current_dir,
+            max_recent_files: 50,
+            recent_files: Vec::new()
+        }
     }
     
     pub fn store(&mut self) {
@@ -141,7 +148,7 @@ impl XvState {
         if let Some(index) = self.index_of(&reader) {
             self.recent_files.remove(index);
             self.recent_files.insert(0, reader);
-        } else if self.recent_files.len() >= 50 {
+        } else if self.recent_files.len() >= self.max_recent_files {
             self.recent_files.remove(0);
             self.recent_files.insert(0, reader);
         } else {
