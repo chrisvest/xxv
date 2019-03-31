@@ -13,14 +13,15 @@ pub fn switch_file_dialog(s: &mut Cursive) {
         let recent_files = state.recent_files();
         for recent_file in recent_files {
             let path = recent_file.path();
-            file_selector.add_item(path.file_name().unwrap().to_string_lossy(), path.into());
+            file_selector.add_item(format!("{}", path.display()), path.into());
         }
     }).unwrap();
     
     let layout = LinearLayout::vertical()
-        .child(ScrollView::new(file_selector.with_id("file_selector")).full_screen())
+        .child(ScrollView::new(file_selector.with_id("file_selector"))
+            .scroll_x(true).full_height())
         .fixed_height((s.screen_size().y - 11).min(50))
-        .fixed_width((s.screen_size().x - 20).min(80));
+        .max_width((s.screen_size().x - 20).min(80));
     
     let file_switcher = Dialog::new()
         .title("Switch file")
@@ -32,7 +33,8 @@ pub fn switch_file_dialog(s: &mut Cursive) {
         .on_event(Key::Esc, |s| {
             s.pop_layer();
         })
-        .on_event(Key::Enter, do_switch_file);
+        .on_event(Key::Enter, do_switch_file)
+        .on_event(Key::Del, remove_selected_file);
     s.add_layer(event_view);
     
 }
@@ -55,4 +57,14 @@ fn do_switch_file(s: &mut Cursive) {
         }
     }
     s.pop_layer();
+}
+
+fn remove_selected_file(s: &mut Cursive) {
+    let mut file_selector = s.find_id::<SelectView<OsString>>("file_selector").unwrap();
+    if let Some(id) = file_selector.selected_id() {
+        file_selector.remove_item(id)(s);
+        s.with_user_data(|state: &mut XvState| {
+            state.remove_recent_file(id);
+        });
+    }
 }

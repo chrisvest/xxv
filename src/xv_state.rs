@@ -140,12 +140,12 @@ impl XvState {
     pub fn close_reader(&mut self, reader: ReaderState) {
         if let Some(index) = self.index_of(&reader) {
             self.recent_files.remove(index);
-            self.recent_files.push(reader);
+            self.recent_files.insert(0, reader);
         } else if self.recent_files.len() >= 50 {
             self.recent_files.remove(0);
-            self.recent_files.push(reader);
+            self.recent_files.insert(0, reader);
         } else {
-            self.recent_files.push(reader);
+            self.recent_files.insert(0, reader);
         }
     }
     
@@ -156,6 +156,10 @@ impl XvState {
             }
         }
         None
+    }
+    
+    pub fn remove_recent_file(&mut self, index: usize) {
+        self.recent_files.remove(index);
     }
     
     pub fn recent_files(&self) -> &[ReaderState] {
