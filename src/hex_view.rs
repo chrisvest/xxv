@@ -145,42 +145,51 @@ impl HexView {
     }
     
     fn on_key_event(&mut self, k: Key) -> EventResult {
-        let inner_height = self.offsets_column_size.y as i16;
+        let inner_height = self.offsets_column_size.y as i64;
         let line_width = self.reader.line_width;
+        let lines_in_file = self.reader.get_lines_in_file();
         let (pos_x, pos_y) = self.reader.window_pos;
-        let (size_x, _size_y) = self.reader.window_size;
+        let (size_x, size_y) = self.reader.window_size;
+        assert_eq!(inner_height, size_y as i64);
         let offset = match k {
             Key::Down => (0, 1),
-            Key::Up => if pos_y > 0 { (0, -1) } else { (0, 0) },
-            Key::Left => if pos_x > 0 { (-1, 0) } else { (0, 0) }
-            Key::Right => if pos_x + u64::from(size_x) < line_width { (1, 0) } else { (0, 0) },
+            Key::Up => (0, -1),
+            Key::Left => (-1, 0),
+            Key::Right => (1, 0),
             Key::PageDown => (0, inner_height),
-            Key::PageUp => if pos_y > inner_height as u64 {
-                (0, -inner_height)
-            } else if pos_y > 0 {
-                (0, -(pos_y as i16))
-            } else {
-                (0, 0)
-            },
-            Key::Home => (-(pos_x as i16), 0),
-            Key::End => ((line_width - u64::from(size_x) - pos_x) as i16, 0),
+            Key::PageUp => (0, -inner_height),
+            Key::Home => (-(pos_x as i64), 0),
+            Key::End => ((line_width - u64::from(size_x) - pos_x) as i64, 0),
             _ => (0, 0)
         };
         self.navigate(offset)
     }
     
-    fn navigate(&mut self, offset: (i16, i16)) -> EventResult {
+    fn navigate(&mut self, offset: (i64, i64)) -> EventResult {
         if offset != (0, 0) {
             let (x, y) = offset;
             if x < 0 {
-                self.reader.window_pos.0 -= (-x) as u64;
+                let diff = (-x) as u64;
+                let curr = self.reader.window_pos.0;
+                self.reader.window_pos.0 = if curr < diff { 0 } else { curr - diff };
             } else {
-                self.reader.window_pos.0 += x as u64;
+                let diff = x as u64;
+                let next = self.reader.window_pos.0 + diff;
+                let line = self.reader.line_width;
+                let width = u64::from(self.reader.window_size.0);
+                let max = if width > line { 0 } else { line - width };
+                self.reader.window_pos.0 = if next > max { max } else { next };
             }
             if y < 0 {
-                self.reader.window_pos.1 -= (-y) as u64;
+                let diff = (-y) as u64;
+                let curr = self.reader.window_pos.1;
+                self.reader.window_pos.1 = if curr < diff { 0 } else { curr - diff };
             } else {
-                self.reader.window_pos.1 += y as u64;
+                let diff = y as u64;
+                let next = self.reader.window_pos.1 + diff;
+                let lines = self.reader.get_lines_in_file();
+                let max = if lines > 0 { lines - 1 } else { 0 };
+                self.reader.window_pos.1 = if next > lines { lines } else { next };
             }
             self.invalidated_resize = true;
             self.invalidated_data_changed = true;

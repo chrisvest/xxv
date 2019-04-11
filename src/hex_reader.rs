@@ -94,6 +94,10 @@ impl HexReader {
         self.line_width - self.window_pos.0
     }
     
+    pub fn get_lines_in_file(&self) -> u64 {
+        self.reader.get_length() / self.line_width
+    }
+    
     pub fn visit_row_offsets(&self, visitor: &mut OffsetsVisitor) {
         let (w, h) = self.window_size;
         let base_offset = self.window_pos.1 * self.line_width;
