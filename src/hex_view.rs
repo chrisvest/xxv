@@ -72,6 +72,10 @@ impl HexView {
     
     pub fn set_line_width(&mut self, length: u64) {
         self.reader.line_width = length;
+        let lines_in_file = self.reader.get_lines_in_file();
+        if self.reader.window_pos.1 > lines_in_file {
+            self.reader.window_pos.1 = lines_in_file;
+        }
         self.invalidated_resize = true;
         self.invalidated_data_changed = true;
     }
