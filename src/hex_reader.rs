@@ -92,15 +92,16 @@ impl HexReader {
     
     pub fn get_bytes_left_in_line(&mut self) -> u64 {
         let line = self.line_width;
-        let pos_x = self.window_pos.0;
+        let mut pos_x = self.window_pos.0;
         if pos_x > line {
-            // This accounts for navigation bugs, which can persist across restarts due to the
-            // persisted XvState. This could also be caused by a corrupted XvState file.
-            self.window_pos.0 = 0;
-            line
-        } else {
-            line - pos_x
+            // This accounts for when the window is at the far right-hand side of the file matrix,
+            // and the line width is changed to be so small that the file is no longer in view of
+            // the window.
+            let width = u64::from(self.window_size.0);
+            self.window_pos.0 = if width > line { 0 } else { line - width };
+            pos_x = self.window_pos.0;
         }
+        line - pos_x
     }
     
     pub fn get_lines_in_file(&self) -> u64 {
