@@ -90,8 +90,17 @@ impl HexReader {
         if self.reader.use_large_addresses() { 16 + 2 } else { 8 + 2 }
     }
     
-    pub fn get_bytes_left_in_line(&self) -> u64 {
-        self.line_width - self.window_pos.0
+    pub fn get_bytes_left_in_line(&mut self) -> u64 {
+        let line = self.line_width;
+        let pos_x = self.window_pos.0;
+        if pos_x > line {
+            // This accounts for navigation bugs, which can persist across restarts due to the
+            // persisted XvState. This could also be caused by a corrupted XvState file.
+            self.window_pos.0 = 0;
+            line
+        } else {
+            line - pos_x
+        }
     }
     
     pub fn get_lines_in_file(&self) -> u64 {

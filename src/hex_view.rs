@@ -60,7 +60,12 @@ impl HexView {
     pub fn go_to_offset(&mut self, offset: u64) {
         let line = offset / self.reader.line_width;
         let line_offset = offset % self.reader.line_width;
-        self.reader.window_pos = (line_offset, line);
+        let lines_in_file = self.reader.get_lines_in_file();
+        if line <= lines_in_file {
+            self.reader.window_pos = (line_offset, line);
+        } else {
+            self.reader.window_pos = (0, lines_in_file);
+        }
         // todo adjust window size if it would overflow at new position
         self.invalidated_data_changed = true;
     }
@@ -146,11 +151,9 @@ impl HexView {
     
     fn on_key_event(&mut self, k: Key) -> EventResult {
         let inner_height = self.offsets_column_size.y as i64;
-        let line_width = self.reader.line_width;
-        let lines_in_file = self.reader.get_lines_in_file();
-        let (pos_x, pos_y) = self.reader.window_pos;
-        let (size_x, size_y) = self.reader.window_size;
-        assert_eq!(inner_height, size_y as i64);
+        let line_width = self.reader.line_width as i64;
+        let pos_x = self.reader.window_pos.0 as i64;
+        let size_x = self.reader.window_size.0 as i64;
         let offset = match k {
             Key::Down => (0, 1),
             Key::Up => (0, -1),
@@ -159,7 +162,7 @@ impl HexView {
             Key::PageDown => (0, inner_height),
             Key::PageUp => (0, -inner_height),
             Key::Home => (-(pos_x as i64), 0),
-            Key::End => ((line_width - u64::from(size_x) - pos_x) as i64, 0),
+            Key::End => (line_width - size_x - pos_x, 0),
             _ => (0, 0)
         };
         self.navigate(offset)
@@ -188,7 +191,6 @@ impl HexView {
                 let diff = y as u64;
                 let next = self.reader.window_pos.1 + diff;
                 let lines = self.reader.get_lines_in_file();
-                let max = if lines > 0 { lines - 1 } else { 0 };
                 self.reader.window_pos.1 = if next > lines { lines } else { next };
             }
             self.invalidated_resize = true;
