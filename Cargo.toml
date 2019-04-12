@@ -7,6 +7,9 @@ description = "A hex viewer for the terminal, with a visual text user interface.
 keywords = ["hex", "binary", "ncurses"]
 license = "Apache-2.0"
 
+[badges.travis-ci]
+repository = "chrisvest/xv"
+
 [profile.release]
 overflow-checks = true
 codegen-units = 1

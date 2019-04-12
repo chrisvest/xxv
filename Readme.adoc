@@ -1,5 +1,7 @@
 = The XV Hex Viewer
 
+image::https://travis-ci.org/chrisvest/xv.svg?branch=master[Build status]
+
 XV is a terminal hex viewer with a text user interface, written in 100% safe Rust.
 Licensed under the Apache-2.0 software license.
 
