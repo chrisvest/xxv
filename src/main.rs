@@ -13,14 +13,10 @@
 //   limitations under the License.
 
 #![forbid(unsafe_code)]
-#[macro_use]
-extern crate clap;
 extern crate serde;
 extern crate serde_derive;
 
 use std::io::Result;
-
-use clap::{App, Arg};
 
 use crate::xv_state::XvState;
 
@@ -39,17 +35,38 @@ mod help_text;
 mod xv_tui;
 
 fn main() -> Result<()> {
-    let matches = App::new("XV Hex Viewer")
-        .version(crate_version!())
-        .about(crate_description!())
-        .arg(Arg::with_name("file")
-            .help("File or files to open.")
-            .multiple(true)
-            .required(true))
-        .get_matches();
+    let crate_name = env!("CARGO_PKG_NAME");
+    let crate_version = env!("CARGO_PKG_VERSION");
+    let crate_description = env!("CARGO_PKG_DESCRIPTION");
+    let usage = include_str!("usage.txt");
 
+    let mut args = std::env::args_os();
+    args.next(); // The first argument is (most likely) the path to our executable.
+    let file_arg = args.next();
+
+    if file_arg.is_none() {
+        eprintln!("Error: The 'file' argument is required.");
+        eprintln!();
+        eprintln!("For more information, try --help.");
+        return Ok(());
+    }
+    
+    let file_name = file_arg.unwrap();
+    
+    if file_name.eq("-h") || file_name.eq("--help") {
+        eprintln!("{} {}", crate_name, crate_version);
+        eprintln!("{}", crate_description);
+        eprintln!();
+        eprintln!("{}", usage);
+        return Ok(());
+    }
+
+    if file_name.eq("-v") || file_name.eq("--version") {
+        eprintln!("{} {}", crate_name, crate_version);
+        return Ok(());
+    }
+    
     let mut state = XvState::load();
-    let file_name = matches.value_of_os("file").unwrap();
     let h_reader = state.open_reader(file_name)?;
     xv_tui::run_tui(h_reader, state);
     Ok(())

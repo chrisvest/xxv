@@ -1,0 +1,9 @@
+USAGE:
+    xv <file>
+
+FLAGS:
+    -h, --help      Prints help information
+    -v, --version   Prints version information
+
+ARGS:
+    <file>          File to open

@@ -18,7 +18,6 @@ opt-level = 'z'
 panic = 'abort'
 
 [dependencies]
-clap = "2.32.0"
 #cursive = "0.11.1"
 cursive = { git = "https://github.com/gyscos/Cursive.git" }
 unicode-width = "0.1.5"
