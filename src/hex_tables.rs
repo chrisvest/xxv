@@ -1,3 +1,4 @@
+#[rustfmt::skip]
 pub const UNICODE_TEXT_TABLE: &[&str; 256] = &[
     "\u{2400}", "\u{2401}", "\u{2402}", "\u{2403}", "\u{2404}", "\u{2405}", "\u{2406}", "\u{2407}",
     "\u{2408}", "\u{2409}", "\u{240A}", "\u{240B}", "\u{240C}", "\u{240D}", "\u{240E}", "\u{240F}",
@@ -26,6 +27,7 @@ pub const UNICODE_TEXT_TABLE: &[&str; 256] = &[
     "\u{FFFD}", "\u{FFFD}", "\u{FFFD}", "\u{FFFD}", "\u{FFFD}", "\u{FFFD}", "\u{FFFD}", "\u{FFFD}",
     "\u{FFFD}", "\u{FFFD}", "\u{FFFD}", "\u{FFFD}", "\u{FFFD}", "\u{FFFD}", "\u{FFFD}", "\u{FFFD}"];
 
+#[rustfmt::skip]
 pub const ASCII_TEXT_TABLE: &[&str; 256] = &[
     ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".",
     ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".",
@@ -44,6 +46,7 @@ pub const ASCII_TEXT_TABLE: &[&str; 256] = &[
     ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".",
     ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."];
 
+#[rustfmt::skip]
 pub const BYTE_RENDER: &[&str; 256] = &[
     "00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "0a", "0b", "0c", "0d", "0e", "0f",
     "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "1a", "1b", "1c", "1d", "1e", "1f",
@@ -62,6 +65,7 @@ pub const BYTE_RENDER: &[&str; 256] = &[
     "e0", "e1", "e2", "e3", "e4", "e5", "e6", "e7", "e8", "e9", "ea", "eb", "ec", "ed", "ee", "ef",
     "f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "fa", "fb", "fc", "fd", "fe", "ff"];
 
+#[rustfmt::skip]
 pub const BYTE_CATEGORY: &[ByteCategory; 256] = &[
     ByteCategory::AsciiControl, ByteCategory::AsciiControl, ByteCategory::AsciiControl,
     ByteCategory::AsciiControl, ByteCategory::AsciiControl, ByteCategory::AsciiControl,
