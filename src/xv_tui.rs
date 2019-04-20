@@ -32,9 +32,6 @@ pub fn run_tui(reader: HexReader, state: XvState) {
     tui.add_global_callback('t', change_theme);
     tui.add_global_callback('o', open_file_dialog);
     tui.add_global_callback('s', switch_file_dialog);
-    tui.add_global_callback('p', |s: &mut Cursive| {
-        panic!("boom!")
-    });
 
     let hex_view = HexView::new(reader).with_id("hex_view");
     let status_bar = new_status_bar();
