@@ -8,13 +8,14 @@ use std::path::{Path, PathBuf};
 use cursive::theme::{Palette, Theme};
 use cursive::theme::BaseColor::*;
 use cursive::theme::Color::*;
-use directories::{BaseDirs, ProjectDirs};
+use directories::BaseDirs;
+use rmp_serde::Serializer;
+use serde::ser::Serialize;
 use serde_derive::{Deserialize, Serialize};
 
 use crate::byte_reader::TilingByteReader;
 use crate::hex_reader::{HexReader, VisualMode};
-use serde::ser::Serialize;
-use rmp_serde::Serializer;
+use crate::utilities;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ReaderState {
@@ -80,7 +81,7 @@ pub struct XvState {
 
 impl XvState {
     pub fn load() -> XvState {
-        if let Some(project_dirs) = ProjectDirs::from("io.github.chrisvest", "", "xv") {
+        if let Some(project_dirs) = utilities::project_dirs() {
             let mut state_path = project_dirs.config_dir().to_owned();
             state_path.push("xv.state");
             
@@ -110,8 +111,7 @@ impl XvState {
     }
     
     pub fn store(&mut self) {
-        let pd = ProjectDirs::from("io.github.chrisvest", "", "xv");
-        if let Some(project_dirs) = pd {
+        if let Some(project_dirs) = utilities::project_dirs() {
             let mut state_path = project_dirs.config_dir().to_owned();
             create_dir_all(&state_path).unwrap();
             state_path.push("xv.state");

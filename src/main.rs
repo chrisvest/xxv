@@ -18,9 +18,11 @@ extern crate serde_derive;
 
 use std::io::Result;
 
+use crate::utilities::{PKG_NAME, PKG_VERSION, PKG_DESCRIPTION};
 use crate::xv_state::XvState;
 
 mod utilities;
+mod panic_hook;
 mod xv_state;
 mod byte_reader;
 mod hex_tables;
@@ -35,10 +37,7 @@ mod help_text;
 mod xv_tui;
 
 fn main() -> Result<()> {
-    let crate_name = env!("CARGO_PKG_NAME");
-    let crate_version = env!("CARGO_PKG_VERSION");
-    let crate_description = env!("CARGO_PKG_DESCRIPTION");
-    let usage = include_str!("usage.txt");
+    panic_hook::install();
 
     let mut args = std::env::args_os();
     args.next(); // The first argument is (most likely) the path to our executable.
@@ -54,15 +53,15 @@ fn main() -> Result<()> {
     let file_name = file_arg.unwrap();
     
     if file_name.eq("-h") || file_name.eq("--help") {
-        eprintln!("{} {}", crate_name, crate_version);
-        eprintln!("{}", crate_description);
+        eprintln!("{} {}", PKG_NAME, PKG_VERSION);
+        eprintln!("{}", PKG_DESCRIPTION);
         eprintln!();
-        eprintln!("{}", usage);
+        eprintln!("{}", include_str!("usage.txt"));
         return Ok(());
     }
 
     if file_name.eq("-v") || file_name.eq("--version") {
-        eprintln!("{} {}", crate_name, crate_version);
+        eprintln!("{} {}", PKG_NAME, PKG_VERSION);
         return Ok(());
     }
     

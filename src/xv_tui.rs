@@ -1,18 +1,22 @@
+use std::io::Error;
+use std::path::PathBuf;
+
 use cursive::Cursive;
 use cursive::event::Key;
 use cursive::traits::{Boxable, Identifiable};
 use cursive::views::{Dialog, LinearLayout, TextView};
 
 use crate::goto_dialog::open_goto_dialog;
+use crate::help_text::show_help;
 use crate::hex_reader::HexReader;
 use crate::hex_view::HexView;
 use crate::open_file_dialog::open_file_dialog;
+use crate::panic_hook::archive_last_crash;
 use crate::set_width_dialog::open_set_width_dialog;
 use crate::status_bar::new_status_bar;
 use crate::switch_file_dialog::switch_file_dialog;
+use crate::utilities::PKG_REPOSITORY;
 use crate::xv_state::XvState;
-use std::io::Error;
-use crate::help_text::show_help;
 
 pub fn run_tui(reader: HexReader, state: XvState) {
     let mut tui = Cursive::default();
@@ -28,6 +32,9 @@ pub fn run_tui(reader: HexReader, state: XvState) {
     tui.add_global_callback('t', change_theme);
     tui.add_global_callback('o', open_file_dialog);
     tui.add_global_callback('s', switch_file_dialog);
+    tui.add_global_callback('p', |s: &mut Cursive| {
+        panic!("boom!")
+    });
 
     let hex_view = HexView::new(reader).with_id("hex_view");
     let status_bar = new_status_bar();
@@ -36,6 +43,10 @@ pub fn run_tui(reader: HexReader, state: XvState) {
         .child(hex_view)
         .child(status_bar)
         .full_screen());
+    
+    if let Some(archived_crash_log) = archive_last_crash() {
+        show_crash_dialog(&mut tui, archived_crash_log);
+    }
 
     tui.run();
 }
@@ -59,6 +70,12 @@ fn change_theme(s: &mut Cursive) {
     if let Some(t) = new_theme {
         s.set_theme(t);
     }
+}
+
+fn show_crash_dialog(s: &mut Cursive, archived_crash_log: PathBuf) {
+    let msg = format!(include_str!("crash_message.txt"), archived_crash_log, PKG_REPOSITORY);
+    let text_view = TextView::new(msg);
+    s.add_layer(Dialog::info("Oops!").content(text_view));
 }
 
 pub trait ShowError {

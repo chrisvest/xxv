@@ -1,4 +1,10 @@
 use std::num::ParseIntError;
+use directories::ProjectDirs;
+
+pub const PKG_NAME: &str = env!("CARGO_PKG_NAME");
+pub const PKG_VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const PKG_DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
+pub const PKG_REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");
 
 pub fn parse_number(number_str: &str) -> Result<u64, ParseIntError> {
     if number_str.starts_with("0x") {
@@ -15,4 +21,8 @@ pub fn parse_number_or_zero(number_str: &str) -> u64 {
         Ok(number) => number,
         _ => 0
     }
+}
+
+pub fn project_dirs() -> Option<ProjectDirs> {
+    ProjectDirs::from("io.github.chrisvest", "", "xv")
 }
