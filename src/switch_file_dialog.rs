@@ -1,10 +1,13 @@
-use cursive::Cursive;
-use cursive::views::{SelectView, Dialog, LinearLayout, ScrollView, OnEventView};
-use cursive::traits::{Boxable, Identifiable};
-use cursive::event::Key;
-use crate::xv_state::XvState;
-use crate::hex_view::HexView;
 use std::ffi::OsString;
+use std::path::PathBuf;
+
+use cursive::Cursive;
+use cursive::event::Key;
+use cursive::traits::{Boxable, Identifiable};
+use cursive::views::{Dialog, LinearLayout, OnEventView, ScrollView, SelectView};
+
+use crate::hex_view::HexView;
+use crate::xv_state::XvState;
 use crate::xv_tui::ShowError;
 
 pub fn switch_file_dialog(s: &mut Cursive) {
@@ -49,9 +52,12 @@ fn do_switch_file(s: &mut Cursive) {
             view.get_reader_state()
         }).unwrap();
         if let Some(reader_result) = s.with_user_data(|state: &mut XvState| {
-            let path = state.resolve_path(file_name);
-            state.close_reader(current_file);
-            state.open_reader(path)
+            let path = PathBuf::from(file_name);
+            let result = state.open_reader(path);
+            if result.is_ok() {
+                state.close_reader(current_file);
+            }
+            result
         }) {
             match reader_result {
                 Ok(reader) => s.call_on_id("hex_view", |view: &mut HexView| {

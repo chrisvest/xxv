@@ -169,7 +169,21 @@ impl XvState {
         self.recent_files.remove(index);
     }
     
-    pub fn recent_files(&self) -> &[ReaderState] {
+    pub fn recent_files(&mut self) -> &[ReaderState] {
+        let mut outdated = Vec::new();
+        let mut i = 0;
+        for file in &self.recent_files {
+            if !file.path.exists() {
+                outdated.push(i);
+            }
+            i += 1;
+        }
+        if !outdated.is_empty() {
+            outdated.reverse();
+            for index in outdated {
+                self.remove_recent_file(index);
+            }
+        }
         &self.recent_files
     }
     
