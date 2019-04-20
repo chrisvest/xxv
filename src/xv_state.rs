@@ -171,12 +171,10 @@ impl XvState {
     
     pub fn recent_files(&mut self) -> &[ReaderState] {
         let mut outdated = Vec::new();
-        let mut i = 0;
-        for file in &self.recent_files {
+        for (i, file) in (&self.recent_files).iter().enumerate() {
             if !file.path.exists() {
                 outdated.push(i);
             }
-            i += 1;
         }
         if !outdated.is_empty() {
             outdated.reverse();

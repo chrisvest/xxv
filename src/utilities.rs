@@ -1,4 +1,7 @@
 use std::num::ParseIntError;
+use std::rc::Rc;
+
+use cursive::views::EditView;
 use directories::ProjectDirs;
 
 pub const PKG_NAME: &str = env!("CARGO_PKG_NAME");
@@ -25,4 +28,8 @@ pub fn parse_number_or_zero(number_str: &str) -> u64 {
 
 pub fn project_dirs() -> Option<ProjectDirs> {
     ProjectDirs::from("io.github.chrisvest", "", "xv")
+}
+
+pub fn get_content(ev: &mut EditView) -> Rc<String> {
+    ev.get_content()
 }

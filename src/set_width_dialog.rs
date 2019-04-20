@@ -1,9 +1,10 @@
 use cursive::Cursive;
-use cursive::views::{EditView, Dialog, OnEventView, LinearLayout, TextView};
-use cursive::traits::{Identifiable, Boxable};
 use cursive::event::Key;
+use cursive::traits::{Boxable, Identifiable};
+use cursive::views::{Dialog, EditView, LinearLayout, OnEventView, TextView};
+
 use crate::hex_view::HexView;
-use crate::utilities::parse_number;
+use crate::utilities::{get_content, parse_number};
 
 pub fn open_set_width_dialog(s: &mut Cursive) {
     let (current_width, current_group) = get_current_width_and_group(s);
@@ -47,8 +48,8 @@ fn get_current_width_and_group(s: &mut Cursive) -> (u64, u16) {
 }
 
 fn do_set_widths(s: &mut Cursive) {
-    let line_width = s.call_on_id("line_width", |v: &mut EditView| v.get_content()).unwrap();
-    let group = s.call_on_id("group", |v: &mut EditView| v.get_content()).unwrap();
+    let line_width = s.call_on_id("line_width", get_content).unwrap();
+    let group = s.call_on_id("group", get_content).unwrap();
     
     s.pop_layer();
     
@@ -74,4 +75,3 @@ fn do_set_widths(s: &mut Cursive) {
         };
     }
 }
-

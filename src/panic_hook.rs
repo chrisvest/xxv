@@ -41,8 +41,8 @@ pub fn archive_last_crash() -> Option<PathBuf> {
 fn report_crash(info: &PanicInfo) -> std::fmt::Result {
     let mut msg = String::new();
 
-    writeln!(msg, "")?;
-    writeln!(msg, "")?;
+    writeln!(msg)?;
+    writeln!(msg)?;
     writeln!(msg, "Panic in {} {}, {}.", PKG_NAME, PKG_VERSION, now().rfc3339())?;
     writeln!(msg, "System: {} ({}), {}.", OS, FAMILY, ARCH)?;
 
@@ -54,7 +54,7 @@ fn report_crash(info: &PanicInfo) -> std::fmt::Result {
         writeln!(msg, "Location: {}.", location)?;
     }
 
-    writeln!(msg, "")?;
+    writeln!(msg)?;
     writeln!(msg, "{:#?}", Backtrace::new())?;
 
     if let Some(dirs) = utilities::project_dirs() {

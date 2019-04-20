@@ -1,17 +1,20 @@
-use crate::hex_reader::{HexReader, VisualVisitor, VisualMode};
-use cursive::traits::View;
-use cursive::Printer;
+use std::convert::TryFrom;
+
+use cursive::align::HAlign;
 use cursive::event::{Event, Key, MouseEvent};
 use cursive::event::EventResult;
-use cursive::Vec2;
-use cursive::align::HAlign;
+use cursive::Printer;
 use cursive::theme::{ColorStyle, Style};
-use unicode_width::UnicodeWidthStr;
-use crate::hex_reader::OffsetsVisitor;
-use crate::hex_reader::HexVisitor;
-use crate::hex_tables::ByteCategory;
-use cursive::utils::span::*;
+use cursive::traits::View;
 use cursive::utils::markup::StyledString;
+use cursive::utils::span::*;
+use cursive::Vec2;
+use unicode_width::UnicodeWidthStr;
+
+use crate::hex_reader::{HexReader, VisualMode, VisualVisitor};
+use crate::hex_reader::HexVisitor;
+use crate::hex_reader::OffsetsVisitor;
+use crate::hex_tables::ByteCategory;
 use crate::xv_state::ReaderState;
 
 pub struct HexView {
@@ -154,10 +157,10 @@ impl HexView {
     }
     
     fn on_key_event(&mut self, k: Key) -> EventResult {
-        let inner_height = self.offsets_column_size.y as i64;
-        let line_width = self.reader.line_width as i64;
-        let pos_x = self.reader.window_pos.0 as i64;
-        let size_x = self.reader.window_size.0 as i64;
+        let inner_height = i64::try_from(self.offsets_column_size.y).unwrap();
+        let line_width = i64::try_from(self.reader.line_width).unwrap();
+        let pos_x = i64::try_from(self.reader.window_pos.0).unwrap();
+        let size_x = i64::from(self.reader.window_size.0);
         let offset = match k {
             Key::Down => (0, 1),
             Key::Up => (0, -1),
@@ -176,11 +179,11 @@ impl HexView {
         if offset != (0, 0) {
             let (x, y) = offset;
             if x < 0 {
-                let diff = (-x) as u64;
+                let diff = u64::try_from(-x).unwrap();
                 let curr = self.reader.window_pos.0;
                 self.reader.window_pos.0 = if curr < diff { 0 } else { curr - diff };
             } else {
-                let diff = x as u64;
+                let diff = u64::try_from(x).unwrap();
                 let next = self.reader.window_pos.0 + diff;
                 let line = self.reader.line_width;
                 let width = u64::from(self.reader.window_size.0);
@@ -188,11 +191,11 @@ impl HexView {
                 self.reader.window_pos.0 = if next > max { max } else { next };
             }
             if y < 0 {
-                let diff = (-y) as u64;
+                let diff = u64::try_from(-y).unwrap();
                 let curr = self.reader.window_pos.1;
                 self.reader.window_pos.1 = if curr < diff { 0 } else { curr - diff };
             } else {
-                let diff = y as u64;
+                let diff = u64::try_from(y).unwrap();
                 let next = self.reader.window_pos.1 + diff;
                 let lines = self.reader.get_lines_in_file();
                 self.reader.window_pos.1 = if next > lines { lines } else { next };
@@ -495,9 +498,11 @@ fn category_to_color(category: &ByteCategory) -> ColorStyle {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::io::Write;
+
     use crate::byte_reader::TilingByteReader;
+
+    use super::*;
 
     #[test]
     fn layout_w80_h24_ll16() {

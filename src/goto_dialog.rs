@@ -1,9 +1,10 @@
 use cursive::Cursive;
-use cursive::views::{LinearLayout, EditView, TextView, Dialog, OnEventView, DummyView};
-use cursive::traits::{Identifiable, Boxable};
 use cursive::event::Key;
+use cursive::traits::{Boxable, Identifiable};
+use cursive::views::{Dialog, DummyView, EditView, LinearLayout, OnEventView, TextView};
+
 use crate::hex_view::HexView;
-use crate::utilities::parse_number_or_zero;
+use crate::utilities::{get_content, parse_number_or_zero};
 
 pub fn open_goto_dialog(s: &mut Cursive) {
     let (line_width, length) = s.call_on_id(
@@ -42,9 +43,9 @@ pub fn open_goto_dialog(s: &mut Cursive) {
 }
 
 fn do_goto(s: &mut Cursive) {
-    let offset_str = s.call_on_id("offset", |v: &mut EditView| v.get_content()).unwrap();
-    let mul1_str = s.call_on_id("mul1", |v: &mut EditView| v.get_content()).unwrap();
-    let mul2_str = s.call_on_id("mul2", |v: &mut EditView| v.get_content()).unwrap();
+    let offset_str = s.call_on_id("offset", get_content).unwrap();
+    let mul1_str = s.call_on_id("mul1", get_content).unwrap();
+    let mul2_str = s.call_on_id("mul2", get_content).unwrap();
     
     s.pop_layer();
 
