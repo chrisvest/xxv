@@ -8,6 +8,7 @@ keywords = ["hex", "binary", "ncurses"]
 license = "Apache-2.0"
 homepage = "https://chrisvest.github.io/xv/"
 repository = "https://github.com/chrisvest/xv"
+readme = "Readme.adoc"
 
 [badges.travis-ci]
 repository = "chrisvest/xv"
