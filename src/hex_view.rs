@@ -168,7 +168,7 @@ impl HexView {
             Key::Right => (1, 0),
             Key::PageDown => (0, inner_height),
             Key::PageUp => (0, -inner_height),
-            Key::Home => (-(pos_x as i64), 0),
+            Key::Home => (-pos_x, 0),
             Key::End => (line_width - size_x - pos_x, 0),
             _ => (0, 0)
         };
@@ -302,8 +302,9 @@ impl View for HexView {
 
             // The available height inside the box border:
             let inner_height = constraint.y - 2;
-            if self.reader.window_size.1 != (inner_height as u16) {
-                self.reader.window_size.1 = inner_height as u16;
+            let inner_height_u16 = u16::try_from(inner_height).unwrap();
+            if self.reader.window_size.1 != (inner_height_u16) {
+                self.reader.window_size.1 = inner_height_u16;
                 self.invalidated_data_changed = true;
             }
 
@@ -318,30 +319,30 @@ impl View for HexView {
 
             let group = u64::from(self.reader.group);
             let reader_pos_x = group - 1;
-            let vis_group_spacer: usize = if self.show_visual_view { 1 } else { 0 };
-            let vis_byte_width: usize = if self.show_visual_view { 1 } else { 0 };
+            let vis_group_spacer: isize = if self.show_visual_view { 1 } else { 0 };
+            let vis_byte_width: isize = if self.show_visual_view { 1 } else { 0 };
             
             let avail_width = self.hex_column_size.x;
-            let mut space_left = avail_width as isize;
-            let mut hex_width: usize = 0;
-            let mut vis_width: usize = 0;
+            let avail_width_isize = isize::try_from(avail_width).unwrap();
+            let mut space_left = avail_width_isize;
+            let mut hex_width: isize = 0;
+            let mut vis_width: isize = 0;
             let mut bytes_consumed = 0;
             let bytes_left_in_line = self.reader.line_width;
 
             for i in 0..bytes_left_in_line {
                 let byte_pair_spacer = if i == 0 { 0 } else { 1 };
-                let consumed_by_byte = byte_pair_spacer + 2 + vis_byte_width as isize;
+                let consumed_by_byte = byte_pair_spacer + 2 + vis_byte_width;
                 if space_left - consumed_by_byte >= 0 {
                     space_left -= consumed_by_byte;
-                    hex_width += 2 + byte_pair_spacer as usize;
+                    hex_width += 2 + byte_pair_spacer;
                     vis_width += vis_byte_width;
                     bytes_consumed += 1;
                     
                     if ((reader_pos_x + i) % group) == 0 && i != 0 {
                         // The hex column group spacer replaces the byte pair spacer automatically.
-                        let consumed_by_group = vis_group_spacer as isize;
-                        if space_left - consumed_by_group > 0 {
-                            space_left -= consumed_by_group;
+                        if space_left - vis_group_spacer > 0 {
+                            space_left -= vis_group_spacer;
                             vis_width += vis_group_spacer;
                         } else {
                             break;
@@ -352,17 +353,19 @@ impl View for HexView {
                 }
             }
             
-            if hex_width + vis_width + 1 < avail_width {
+            if hex_width + vis_width + 1 < avail_width_isize {
                 // Add right padding to hex column.
                 hex_width += 1;
-            } else if hex_width + vis_width == avail_width {
+            } else if hex_width + vis_width == avail_width_isize {
                 // Remove the left hex column padding to squeeze in the last byte.
                 self.hex_column_pos.x -= 1;
             }
             
-            self.hex_column_size = Vec2::new(hex_width, inner_height);
-            self.visual_column_pos = Vec2::new(self.hex_column_pos.x + hex_width + 1, 1);
-            self.visual_column_size = Vec2::new(vis_width, inner_height);
+            let hex_uw = usize::try_from(hex_width).unwrap();
+            let vis_uw = usize::try_from(vis_width).unwrap();
+            self.hex_column_size = Vec2::new(hex_uw, inner_height);
+            self.visual_column_pos = Vec2::new(self.hex_column_pos.x + hex_uw + 1, 1);
+            self.visual_column_size = Vec2::new(vis_uw, inner_height);
             
             if bytes_consumed != self.reader.window_size.0 {
                 self.reader.window_size.0 = bytes_consumed;
