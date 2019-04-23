@@ -1,8 +1,9 @@
+use std::convert::TryFrom;
 use std::io::Result;
+use std::path::PathBuf;
 
 use crate::byte_reader::TilingByteReader;
 use crate::hex_tables::*;
-use std::path::PathBuf;
 
 #[derive(Copy, Clone, Debug)]
 pub enum VisualMode {
@@ -95,21 +96,22 @@ impl HexReader {
     }
     
     pub fn visit_row_offsets(&self, visitor: &mut OffsetsVisitor) {
-        let (w, h) = self.window_size;
+        let w = usize::from(self.window_size.0);
+        let h = usize::from(self.window_size.1);
         let base_offset = self.window_pos.1 * self.line_width;
-        let mut capture_height = self.capture.len() / w as usize;
-        if capture_height * (w as usize) < self.capture.len() {
+        let mut capture_height = self.capture.len() / w;
+        if capture_height * w < self.capture.len() {
             capture_height += 1;
         }
-        let height = (h as usize).min(capture_height);
+        let height = u64::try_from(h.min(capture_height)).unwrap();
         
         if self.reader.use_large_addresses() {
-            for i in 0..height as u64 {
+            for i in 0..height {
                 let offset = base_offset + i * self.line_width;
                 visitor.offset(&format!("0x{:016X}", offset));
             }
         } else {
-            for i in 0..height as u64 {
+            for i in 0..height {
                 let offset = base_offset + i * self.line_width;
                 visitor.offset(&format!("0x{:08X}", offset));
             }
@@ -118,18 +120,20 @@ impl HexReader {
     }
     
     pub fn visit_hex(&self, visitor: &mut HexVisitor) {
-        let cap = self.capture.as_slice();
-        
+        let capture = self.capture.as_slice();
+        let line_cap = u64::from(self.window_size.0);
+        let group = u64::from(self.group);
+
         let mut i = 0;
-        for b in cap {
+        for b in capture {
             i += 1;
-            let r = *b as usize;
+            let r = usize::from(*b);
             visitor.byte(r);
-            
-            if i == self.window_size.0 {
+
+            if i == line_cap {
                 visitor.next_line();
                 i = 0;
-            } else if (self.window_pos.0 + u64::from(i)) % u64::from(self.group) == 0 {
+            } else if (self.window_pos.0 + i) % group == 0 {
                 visitor.group();
             }
         }
@@ -138,18 +142,20 @@ impl HexReader {
     }
     
     pub fn visit_visual(&self, visitor: &mut VisualVisitor) {
-        let cap = self.capture.as_slice();
+        let capture = self.capture.as_slice();
+        let line_cap = u64::from(self.window_size.0);
+        let group = u64::from(self.group);
 
         let mut i = 0;
-        for b in cap {
+        for b in capture {
             i += 1;
-            let r = *b as usize;
+            let r = usize::from(*b);
             visitor.visual_element(r);
 
-            if i == self.window_size.0 {
+            if i == line_cap {
                 visitor.next_line();
                 i = 0;
-            } else if (self.window_pos.0 + u64::from(i)) % u64::from(self.group) == 0 {
+            } else if (self.window_pos.0 + i) % group == 0 {
                 visitor.group();
             }
         }
@@ -195,9 +201,11 @@ impl HexReader {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::io::Write;
+
     use tempfile;
+
+    use super::*;
 
     impl OffsetsVisitor for String {
         fn offset(&mut self, offset: &str) {

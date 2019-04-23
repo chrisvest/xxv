@@ -57,7 +57,7 @@ impl TilingByteReader {
         // The 'h' height is the number of lines in the window,
         // and 'w' is the width of each window line.
         let (x, y, w, h) = window;
-        let mut read_buf = vec![0; w as usize];
+        let mut read_buf = vec![0; usize::from(w)];
 
         for i in y..(y + (u64::from(h))) {
             let offset = line_length * i + x;

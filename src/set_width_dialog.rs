@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 use cursive::Cursive;
 use cursive::event::Key;
 use cursive::traits::{Boxable, Identifiable};
@@ -68,7 +70,7 @@ fn do_set_widths(s: &mut Cursive) {
         match parse_number(&group) {
             Ok(group) => s.call_on_id("hex_view", |v: &mut HexView| {
                 if group > 0 && group < u64::from(std::u16::MAX) {
-                    v.set_group(group as u16);
+                    v.set_group(u16::try_from(group).unwrap());
                 }
             }),
             _ => None,
