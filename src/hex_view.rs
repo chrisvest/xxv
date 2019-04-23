@@ -665,4 +665,49 @@ mod tests {
         assert_eq!(view.visual_column_pos, Vec2::new(59, 1));
         assert_eq!(view.visual_column_size, Vec2::new(17, 21));
     }
+
+    #[test]
+    fn layout_w82_h24_ll32() {
+        let mut tmpf = tempfile::NamedTempFile::new().unwrap();
+        tmpf.write(b"0123456789abcdef0123456789abcdef0123456789abcdef").unwrap();
+
+        let byte_reader = TilingByteReader::new(tmpf.path()).unwrap();
+        let hex_reader = HexReader::new(byte_reader).unwrap();
+        let mut view = HexView::new(hex_reader);
+
+        view.reader.line_width = 32;
+        let constraint = Vec2::new(82, 23);
+        view.layout(constraint);
+
+        assert_eq!(view.reader.line_width, 32);
+        assert_eq!(view.reader.window_pos, (0, 0));
+        assert_eq!(view.reader.window_size, (16, 21));
+
+        assert_eq!(view.offsets_column_pos, Vec2::new(1, 1));
+        assert_eq!(view.offsets_column_size, Vec2::new(10, 21));
+
+        assert_eq!(view.hex_column_pos, Vec2::new(13, 1));
+        assert_eq!(view.hex_column_size, Vec2::new(48, 21));
+
+        assert_eq!(view.visual_column_pos, Vec2::new(62, 1));
+        assert_eq!(view.visual_column_size, Vec2::new(18, 21));
+
+        // Moving the window one byte to the right, should keep the rendering dimensions the same.
+        view.navigate((1, 0));
+        let constraint = Vec2::new(82, 23);
+        view.layout(constraint);
+
+        assert_eq!(view.reader.line_width, 32);
+        assert_eq!(view.reader.window_pos, (1, 0));
+        assert_eq!(view.reader.window_size, (16, 21));
+
+        assert_eq!(view.offsets_column_pos, Vec2::new(1, 1));
+        assert_eq!(view.offsets_column_size, Vec2::new(10, 21));
+
+        assert_eq!(view.hex_column_pos, Vec2::new(13, 1));
+        assert_eq!(view.hex_column_size, Vec2::new(48, 21));
+
+        assert_eq!(view.visual_column_pos, Vec2::new(62, 1));
+        assert_eq!(view.visual_column_size, Vec2::new(18, 21));
+    }
 }
