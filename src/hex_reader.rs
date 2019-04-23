@@ -90,20 +90,6 @@ impl HexReader {
         if self.reader.use_large_addresses() { 16 + 2 } else { 8 + 2 }
     }
     
-    pub fn get_bytes_left_in_line(&mut self) -> u64 {
-        let line = self.line_width;
-        let mut pos_x = self.window_pos.0;
-        if pos_x > line {
-            // This accounts for when the window is at the far right-hand side of the file matrix,
-            // and the line width is changed to be so small that the file is no longer in view of
-            // the window.
-            let width = u64::from(self.window_size.0);
-            self.window_pos.0 = if width > line { 0 } else { line - width };
-            pos_x = self.window_pos.0;
-        }
-        line - pos_x
-    }
-    
     pub fn get_lines_in_file(&self) -> u64 {
         self.reader.get_length() / self.line_width
     }

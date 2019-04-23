@@ -316,8 +316,8 @@ impl View for HexView {
             self.hex_column_pos = Vec2::new(hex_col_start, 1);
             self.hex_column_size = Vec2::new(constraint.x - hex_col_start - 1, inner_height);
 
-            let reader_pos_x = self.reader.window_pos.0;
             let group = u64::from(self.reader.group);
+            let reader_pos_x = group - 1;
             let vis_group_spacer: usize = if self.show_visual_view { 1 } else { 0 };
             let vis_byte_width: usize = if self.show_visual_view { 1 } else { 0 };
             
@@ -326,7 +326,7 @@ impl View for HexView {
             let mut hex_width: usize = 0;
             let mut vis_width: usize = 0;
             let mut bytes_consumed = 0;
-            let bytes_left_in_line = self.reader.get_bytes_left_in_line();
+            let bytes_left_in_line = self.reader.line_width;
 
             for i in 0..bytes_left_in_line {
                 let byte_pair_spacer = if i == 0 { 0 } else { 1 };
@@ -513,6 +513,7 @@ mod tests {
         let hex_reader = HexReader::new(byte_reader).unwrap();
         let mut view = HexView::new(hex_reader);
 
+        view.reader.line_width = 16;
         let constraint = Vec2::new(80, 23);
         view.layout(constraint);
 
@@ -524,10 +525,37 @@ mod tests {
         assert_eq!(view.offsets_column_size, Vec2::new(10, 21));
 
         assert_eq!(view.hex_column_pos, Vec2::new(13, 1));
-        assert_eq!(view.hex_column_size, Vec2::new(48, 21));
+        assert_eq!(view.hex_column_size, Vec2::new(47, 21));
         
-        assert_eq!(view.visual_column_pos, Vec2::new(62, 1));
-        assert_eq!(view.visual_column_size, Vec2::new(17, 21));
+        assert_eq!(view.visual_column_pos, Vec2::new(61, 1));
+        assert_eq!(view.visual_column_size, Vec2::new(18, 21));
+    }
+
+    #[test]
+    fn layout_w80_h24_ll32() {
+        let mut tmpf = tempfile::NamedTempFile::new().unwrap();
+        tmpf.write(b"0123456789abcdef0123456789abcdef").unwrap();
+
+        let byte_reader = TilingByteReader::new(tmpf.path()).unwrap();
+        let hex_reader = HexReader::new(byte_reader).unwrap();
+        let mut view = HexView::new(hex_reader);
+
+        view.reader.line_width = 32;
+        let constraint = Vec2::new(80, 23);
+        view.layout(constraint);
+
+        assert_eq!(view.reader.line_width, 32);
+        assert_eq!(view.reader.window_pos, (0, 0));
+        assert_eq!(view.reader.window_size, (16, 21));
+
+        assert_eq!(view.offsets_column_pos, Vec2::new(1, 1));
+        assert_eq!(view.offsets_column_size, Vec2::new(10, 21));
+
+        assert_eq!(view.hex_column_pos, Vec2::new(13, 1));
+        assert_eq!(view.hex_column_size, Vec2::new(47, 21));
+
+        assert_eq!(view.visual_column_pos, Vec2::new(61, 1));
+        assert_eq!(view.visual_column_size, Vec2::new(18, 21));
     }
 
     #[test]
@@ -549,11 +577,11 @@ mod tests {
         assert_eq!(view.offsets_column_pos, Vec2::new(1, 1));
         assert_eq!(view.offsets_column_size, Vec2::new(10, 21));
 
-        assert_eq!(view.hex_column_pos, Vec2::new(13, 1));
+        assert_eq!(view.hex_column_pos, Vec2::new(12, 1));
         assert_eq!(view.hex_column_size, Vec2::new(47, 21));
         
-        assert_eq!(view.visual_column_pos, Vec2::new(61, 1));
-        assert_eq!(view.visual_column_size, Vec2::new(17, 21));
+        assert_eq!(view.visual_column_pos, Vec2::new(60, 1));
+        assert_eq!(view.visual_column_size, Vec2::new(18, 21));
     }
 
     #[test]
@@ -570,15 +598,15 @@ mod tests {
 
         assert_eq!(view.reader.line_width, 16);
         assert_eq!(view.reader.window_pos, (0, 0));
-        assert_eq!(view.reader.window_size, (16, 21));
+        assert_eq!(view.reader.window_size, (15, 21));
 
         assert_eq!(view.offsets_column_pos, Vec2::new(1, 1));
         assert_eq!(view.offsets_column_size, Vec2::new(10, 21));
 
-        assert_eq!(view.hex_column_pos, Vec2::new(12, 1));
-        assert_eq!(view.hex_column_size, Vec2::new(47, 21));
+        assert_eq!(view.hex_column_pos, Vec2::new(13, 1));
+        assert_eq!(view.hex_column_size, Vec2::new(45, 21));
         
-        assert_eq!(view.visual_column_pos, Vec2::new(60, 1));
+        assert_eq!(view.visual_column_pos, Vec2::new(59, 1));
         assert_eq!(view.visual_column_size, Vec2::new(17, 21));
     }
 
@@ -605,7 +633,7 @@ mod tests {
         assert_eq!(view.hex_column_size, Vec2::new(45, 21));
         
         assert_eq!(view.visual_column_pos, Vec2::new(59, 1));
-        assert_eq!(view.visual_column_size, Vec2::new(16, 21));
+        assert_eq!(view.visual_column_size, Vec2::new(17, 21));
     }
 
     #[test]
@@ -632,33 +660,6 @@ mod tests {
         assert_eq!(view.hex_column_size, Vec2::new(45, 21));
         
         assert_eq!(view.visual_column_pos, Vec2::new(59, 1));
-        assert_eq!(view.visual_column_size, Vec2::new(16, 21));
-    }
-
-    #[test]
-    fn layout_w80_h24_ll32() {
-        let mut tmpf = tempfile::NamedTempFile::new().unwrap();
-        tmpf.write(b"0123456789abcdef0123456789abcdef").unwrap();
-
-        let byte_reader = TilingByteReader::new(tmpf.path()).unwrap();
-        let hex_reader = HexReader::new(byte_reader).unwrap();
-        let mut view = HexView::new(hex_reader);
-
-        view.reader.line_width = 32;
-        let constraint = Vec2::new(80, 23);
-        view.layout(constraint);
-
-        assert_eq!(view.reader.line_width, 32);
-        assert_eq!(view.reader.window_pos, (0, 0));
-        assert_eq!(view.reader.window_size, (16, 21));
-
-        assert_eq!(view.offsets_column_pos, Vec2::new(1, 1));
-        assert_eq!(view.offsets_column_size, Vec2::new(10, 21));
-
-        assert_eq!(view.hex_column_pos, Vec2::new(13, 1));
-        assert_eq!(view.hex_column_size, Vec2::new(48, 21));
-        
-        assert_eq!(view.visual_column_pos, Vec2::new(62, 1));
         assert_eq!(view.visual_column_size, Vec2::new(17, 21));
     }
 }
