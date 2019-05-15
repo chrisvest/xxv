@@ -21,7 +21,7 @@ opt-level = 's'
 panic = "abort"
 
 [dependencies]
-cursive = "0.11.2"
+cursive = "0.12.0"
 unicode-width = "0.1.5"
 directories = "1.0.2"
 rmp-serde = "0.13.7"
@@ -32,4 +32,4 @@ time = "0.1.42"
 #wl-clipboard-rs = "0.2.0" # Wayland clipboard integration.
 
 [dev-dependencies]
-tempfile = "2"
+tempfile = "3.0.7"
