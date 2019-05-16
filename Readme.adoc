@@ -9,6 +9,7 @@ XV is a terminal hex viewer with a text user interface, written in 100% safe Rus
 Licensed under the Apache-2.0 software license.
 
 Get it from https://crates.io/crates/xv[crates.io] by running `cargo install xv` in your terminal.
+Make sure you have a proper https://github.com/chrisvest/xv/wiki[development environment] first, though.
 
 image::docs/screenshot.png[Screenshot showing the XV hex viewer in a terminal]
 
