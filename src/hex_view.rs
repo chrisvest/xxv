@@ -11,7 +11,7 @@ use cursive::utils::span::*;
 use cursive::Vec2;
 use unicode_width::UnicodeWidthStr;
 
-use crate::hex_reader::{HexReader, VisualMode};
+use crate::hex_reader::{HexReader, VisualMode, Highlight};
 use crate::hex_reader::HexVisitor;
 use crate::hex_reader::OffsetsVisitor;
 use crate::hex_tables::ByteCategory;
@@ -29,7 +29,11 @@ pub struct HexView {
     visual_column_pos: Vec2,
     visual_column_size: Vec2,
     prestyled_hex_table: Vec<StyledString>,
-    prestyled_visual_table: Vec<StyledString>
+    prestyled_hex_table_positive: Vec<StyledString>,
+    prestyled_hex_table_negative: Vec<StyledString>,
+    prestyled_visual_table: Vec<StyledString>,
+    prestyled_visual_table_positive: Vec<StyledString>,
+    prestyled_visual_table_negative: Vec<StyledString>,
 }
 
 impl HexView {
@@ -46,7 +50,11 @@ impl HexView {
             visual_column_pos: Vec2::new(0, 0),
             visual_column_size: Vec2::new(0, 0),
             prestyled_hex_table: Vec::new(),
-            prestyled_visual_table: Vec::new()
+            prestyled_hex_table_positive: Vec::new(),
+            prestyled_hex_table_negative: Vec::new(),
+            prestyled_visual_table: Vec::new(),
+            prestyled_visual_table_positive: Vec::new(),
+            prestyled_visual_table_negative: Vec::new(),
         }
     }
     
@@ -70,6 +78,8 @@ impl HexView {
             self.reader.window_pos = (0, lines_in_file);
         }
         // todo adjust window size if it would overflow at new position
+        self.reader.clear_highlights();
+        self.reader.highlight(offset, Highlight::Positive);
         self.invalidated_data_changed = true;
     }
     
@@ -243,11 +253,23 @@ impl HexView {
         self.prestyled_hex_table = self.reader.map_hex_table(|category, s| {
             StyledString::styled(s, category_to_color(category))
         });
+        self.prestyled_hex_table_positive = self.reader.map_hex_table(|_category, s| {
+            StyledString::styled(s, ColorStyle::highlight_inactive())
+        });
+        self.prestyled_hex_table_negative = self.reader.map_hex_table(|_category, s| {
+            StyledString::styled(s, ColorStyle::highlight())
+        });
     }
     
     fn build_prestyled_visual_table(&mut self) {
         self.prestyled_visual_table = self.reader.map_visual_table(|category, s| {
             StyledString::styled(s, category_to_color(category))
+        });
+        self.prestyled_visual_table_positive = self.reader.map_visual_table(|category, s| {
+            StyledString::styled(s, ColorStyle::highlight_inactive())
+        });
+        self.prestyled_visual_table_negative = self.reader.map_visual_table(|category, s| {
+            StyledString::styled(s, ColorStyle::highlight())
         });
     }
 }
@@ -272,7 +294,9 @@ impl View for HexView {
         let mut hex_printer = HexPrinter {
             max_width: 0,
             pos: Vec2::new(0, 0),
-            table: &self.prestyled_hex_table,
+            table_neu: &self.prestyled_hex_table,
+            table_pos: &self.prestyled_hex_table_positive,
+            table_neg: &self.prestyled_hex_table_negative,
             printer: &printer.offset(self.hex_column_pos).cropped(self.hex_column_size)
         };
         self.reader.visit_hex(&mut hex_printer);
@@ -432,18 +456,25 @@ impl<'a, 'b, 'x> OffsetsVisitor for OffsetPrinter<'a, 'b, 'x> {
 struct HexPrinter<'a, 'b, 'x> {
     max_width: usize,
     pos: Vec2,
-    table: &'x [StyledString],
+    table_neu: &'x [StyledString],
+    table_pos: &'x [StyledString],
+    table_neg: &'x [StyledString],
     printer: &'x Printer<'a, 'b>
 }
 
 const GROUP_SEP: &str = "\u{00A6}";
 
 impl<'a, 'b, 'x> HexVisitor for HexPrinter<'a, 'b, 'x> {
-    fn byte(&mut self, index: usize) {
+    fn byte(&mut self, index: usize, highlight: Highlight) {
         if self.pos.x != 0 {
             self.pos.x += 1;
         }
-        let hex_element = &self.table[index];
+        let table = match highlight {
+            Highlight::Neutral => self.table_neu,
+            Highlight::Positive => self.table_pos,
+            Highlight::Negative => self.table_neg,
+        };
+        let hex_element = &table[index];
         self.printer.print_styled(self.pos, hex_element.into());
         self.pos.x += 2;
     }
@@ -470,7 +501,7 @@ struct VisualPrinter<'a, 'b, 'x> {
 }
 
 impl<'a, 'b, 'x> HexVisitor for VisualPrinter<'a, 'b, 'x> {
-    fn byte(&mut self, index: usize) {
+    fn byte(&mut self, index: usize, highlight: Highlight) {
         let vis_element = &self.table[index];
         self.printer.print_styled(self.pos, vis_element.into());
         self.pos.x += vis_element.width();
