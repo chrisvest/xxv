@@ -28,16 +28,6 @@ pub trait HexVisitor {
     fn end(&mut self);
 }
 
-pub trait VisualVisitor {
-    fn visual_element(&mut self, index: usize);
-    
-    fn group(&mut self);
-    
-    fn next_line(&mut self);
-    
-    fn end(&mut self);
-}
-
 #[derive(Debug)]
 pub struct HexReader {
     reader: TilingByteReader,
@@ -119,6 +109,7 @@ impl HexReader {
         visitor.end();
     }
     
+    #[inline]
     pub fn visit_hex(&self, visitor: &mut HexVisitor) {
         let capture = self.capture.as_slice();
         let line_cap = u64::from(self.window_size.0);
@@ -129,28 +120,6 @@ impl HexReader {
             i += 1;
             let r = usize::from(*b);
             visitor.byte(r);
-
-            if i == line_cap {
-                visitor.next_line();
-                i = 0;
-            } else if (self.window_pos.0 + i) % group == 0 {
-                visitor.group();
-            }
-        }
-
-        visitor.end();
-    }
-    
-    pub fn visit_visual(&self, visitor: &mut VisualVisitor) {
-        let capture = self.capture.as_slice();
-        let line_cap = u64::from(self.window_size.0);
-        let group = u64::from(self.group);
-
-        let mut i = 0;
-        for b in capture {
-            i += 1;
-            let r = usize::from(*b);
-            visitor.visual_element(r);
 
             if i == line_cap {
                 visitor.next_line();

@@ -11,7 +11,7 @@ use cursive::utils::span::*;
 use cursive::Vec2;
 use unicode_width::UnicodeWidthStr;
 
-use crate::hex_reader::{HexReader, VisualMode, VisualVisitor};
+use crate::hex_reader::{HexReader, VisualMode};
 use crate::hex_reader::HexVisitor;
 use crate::hex_reader::OffsetsVisitor;
 use crate::hex_tables::ByteCategory;
@@ -286,7 +286,7 @@ impl View for HexView {
                 table: &self.prestyled_visual_table,
                 printer: &printer.offset(self.visual_column_pos).cropped(self.visual_column_size)
             };
-            self.reader.visit_visual(&mut visual_printer);
+            self.reader.visit_hex(&mut visual_printer);
         }
     }
 
@@ -443,7 +443,8 @@ impl<'a, 'b, 'x> HexVisitor for HexPrinter<'a, 'b, 'x> {
         if self.pos.x != 0 {
             self.pos.x += 1;
         }
-        self.printer.print_styled(self.pos, (&self.table[index]).into());
+        let hex_element = &self.table[index];
+        self.printer.print_styled(self.pos, hex_element.into());
         self.pos.x += 2;
     }
 
@@ -468,8 +469,8 @@ struct VisualPrinter<'a, 'b, 'x> {
     printer: &'x Printer<'a, 'b>
 }
 
-impl<'a, 'b, 'x> VisualVisitor for VisualPrinter<'a, 'b, 'x> {
-    fn visual_element(&mut self, index: usize) {
+impl<'a, 'b, 'x> HexVisitor for VisualPrinter<'a, 'b, 'x> {
+    fn byte(&mut self, index: usize) {
         let vis_element = &self.table[index];
         self.printer.print_styled(self.pos, vis_element.into());
         self.pos.x += vis_element.width();
