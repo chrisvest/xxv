@@ -71,8 +71,13 @@ impl HexView {
     pub fn go_to_offset(&mut self, offset: u64) {
         self.reader.clear_highlights();
 
-        let line = offset / self.reader.line_width;
-        let line_offset = offset % self.reader.line_width;
+        let current_pos = self.reader.window_pos;
+        let window_size = self.reader.window_size;
+        let current_size = (u64::from(window_size.0), u64::from(window_size.1));
+        let line_width = self.reader.line_width;
+
+        let line = offset / line_width;
+        let line_offset = offset % line_width;
         let lines_in_file = self.reader.get_lines_in_file();
         
         let target_pos = if line <= lines_in_file {
@@ -83,13 +88,12 @@ impl HexView {
         };
         
         // Only adjust the window position if the target position is not within the window bounds.
-        let current_pos = self.reader.window_pos;
-        let window_size = self.reader.window_size;
-        let current_size = (u64::from(window_size.0), u64::from(window_size.1));
         if target_pos.0 < current_pos.0 || target_pos.1 < current_pos.1 ||
             target_pos.0 > current_pos.0 + current_size.0 - 1||
             target_pos.1 > current_pos.1 + current_size.1 - 1 {
             self.reader.window_pos = target_pos;
+            let max_line_offset = line_width - current_size.0;
+            self.reader.window_pos.0 = u64::min(max_line_offset, self.reader.window_pos.0);
         }
         
         self.invalidated_data_changed = true;
