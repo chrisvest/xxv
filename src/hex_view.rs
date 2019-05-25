@@ -72,12 +72,23 @@ impl HexView {
         let line = offset / self.reader.line_width;
         let line_offset = offset % self.reader.line_width;
         let lines_in_file = self.reader.get_lines_in_file();
-        if line <= lines_in_file {
-            self.reader.window_pos = (line_offset, line);
+        
+        let target_pos = if line <= lines_in_file {
+            (line_offset, line)
         } else {
-            self.reader.window_pos = (0, lines_in_file);
+            (0, lines_in_file)
+        };
+        
+        // Only adjust the window position if the target position is not within the window bounds.
+        let current_pos = self.reader.window_pos;
+        let window_size = self.reader.window_size;
+        let current_size = (u64::from(window_size.0), u64::from(window_size.1));
+        if target_pos.0 < current_pos.0 || target_pos.1 < current_pos.1 ||
+            target_pos.0 > current_pos.0 + current_size.0 - 1||
+            target_pos.1 > current_pos.1 + current_size.1 - 1 {
+            self.reader.window_pos = target_pos;
         }
-        // todo adjust window size if it would overflow at new position
+        
         self.reader.clear_highlights();
         self.reader.highlight(offset, Highlight::Positive);
         self.invalidated_data_changed = true;
