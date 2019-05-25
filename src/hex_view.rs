@@ -69,11 +69,14 @@ impl HexView {
     }
     
     pub fn go_to_offset(&mut self, offset: u64) {
+        self.reader.clear_highlights();
+
         let line = offset / self.reader.line_width;
         let line_offset = offset % self.reader.line_width;
         let lines_in_file = self.reader.get_lines_in_file();
         
         let target_pos = if line <= lines_in_file {
+            self.reader.highlight(offset, Highlight::Positive);
             (line_offset, line)
         } else {
             (0, lines_in_file)
@@ -89,8 +92,6 @@ impl HexView {
             self.reader.window_pos = target_pos;
         }
         
-        self.reader.clear_highlights();
-        self.reader.highlight(offset, Highlight::Positive);
         self.invalidated_data_changed = true;
     }
     
