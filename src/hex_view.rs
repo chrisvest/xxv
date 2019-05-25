@@ -281,10 +281,10 @@ impl HexView {
         self.prestyled_visual_table = self.reader.map_visual_table(|category, s| {
             StyledString::styled(s, category_to_color(category))
         });
-        self.prestyled_visual_table_positive = self.reader.map_visual_table(|category, s| {
+        self.prestyled_visual_table_positive = self.reader.map_visual_table(|_category, s| {
             StyledString::styled(s, ColorStyle::highlight_inactive())
         });
-        self.prestyled_visual_table_negative = self.reader.map_visual_table(|category, s| {
+        self.prestyled_visual_table_negative = self.reader.map_visual_table(|_category, s| {
             StyledString::styled(s, ColorStyle::highlight())
         });
     }
@@ -323,7 +323,9 @@ impl View for HexView {
             
             let mut visual_printer = VisualPrinter {
                 pos: Vec2::new(0,0),
-                table: &self.prestyled_visual_table,
+                table_neu: &self.prestyled_visual_table,
+                table_pos: &self.prestyled_visual_table_positive,
+                table_neg: &self.prestyled_visual_table_negative,
                 printer: &printer.offset(self.visual_column_pos).cropped(self.visual_column_size)
             };
             self.reader.visit_hex(&mut visual_printer);
@@ -512,13 +514,20 @@ impl<'a, 'b, 'x> HexVisitor for HexPrinter<'a, 'b, 'x> {
 
 struct VisualPrinter<'a, 'b, 'x> {
     pos: Vec2,
-    table: &'x [StyledString],
+    table_neu: &'x [StyledString],
+    table_pos: &'x [StyledString],
+    table_neg: &'x [StyledString],
     printer: &'x Printer<'a, 'b>
 }
 
 impl<'a, 'b, 'x> HexVisitor for VisualPrinter<'a, 'b, 'x> {
     fn byte(&mut self, index: usize, highlight: Highlight) {
-        let vis_element = &self.table[index];
+        let table = match highlight {
+            Highlight::Neutral => self.table_neu,
+            Highlight::Positive => self.table_pos,
+            Highlight::Negative => self.table_neg,
+        };
+        let vis_element = &table[index];
         self.printer.print_styled(self.pos, vis_element.into());
         self.pos.x += vis_element.width();
     }
