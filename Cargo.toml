@@ -21,7 +21,7 @@ opt-level = 's'
 panic = "abort"
 
 [dependencies]
-cursive = "0.12.0"
+cursive = { version = "0.12.0", default-features = false }
 unicode-width = "0.1.5"
 directories = "1.0.2"
 rmp-serde = "0.13.7"
@@ -33,3 +33,11 @@ time = "0.1.42"
 
 [dev-dependencies]
 tempfile = "3.0.7"
+
+[features]
+default = ["ncurses-backend"]
+ncurses-backend = ["cursive/ncurses-backend"]
+pancurses-backend = ["cursive/pancurses-backend"]
+termion-backend = ["cursive/termion-backend"]
+crossterm-backend = ["cursive/crossterm-backend"]
+blt-backend = ["cursive/blt-backend"]
