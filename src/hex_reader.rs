@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use crate::byte_reader::TilingByteReader;
 use crate::hex_tables::*;
 use std::collections::btree_map::BTreeMap;
+use crate::hex_view_printers::TableSet;
 
 #[derive(Copy, Clone, Debug)]
 pub enum VisualMode {
@@ -178,23 +179,17 @@ impl HexReader {
         }
     }
 
-    pub fn map_hex_table<F, T>(&self, callback: F) -> Vec<T>
-        where F: Fn(&ByteCategory, &'static str) -> T {
-        let mut vec = Vec::with_capacity(BYTE_RENDER.len());
+    pub fn generate_hex_tables(&self, table_set: &mut TableSet) {
         for i in 0..BYTE_RENDER.len() {
-            vec.push(callback(&BYTE_CATEGORY[i], BYTE_RENDER[i]));
+            table_set.push_byte(&BYTE_CATEGORY[i], BYTE_RENDER[i]);
         }
-        vec
     }
-    
-    pub fn map_visual_table<F, T>(&self, callback: F) -> Vec<T>
-        where F: Fn(&ByteCategory, &'static str) -> T {
-        let tbl = self.vis_table();
-        let mut vec = Vec::with_capacity(tbl.len());
-        for i in 0..tbl.len() {
-            vec.push(callback(&BYTE_CATEGORY[i], tbl[i]));
+
+    pub fn generate_visual_tables(&self, table_set: &mut TableSet) {
+        let table = self.vis_table();
+        for i in 0..BYTE_RENDER.len() {
+            table_set.push_byte(&BYTE_CATEGORY[i], table[i]);
         }
-        vec
     }
     
     pub fn set_visual_mode(&mut self, mode: VisualMode) {

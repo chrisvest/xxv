@@ -6,14 +6,12 @@ use cursive::event::EventResult;
 use cursive::Printer;
 use cursive::theme::ColorStyle;
 use cursive::traits::View;
-use cursive::utils::markup::StyledString;
 use cursive::Vec2;
 use unicode_width::UnicodeWidthStr;
 
 use crate::hex_reader::{HexReader, VisualMode, Highlight};
-use crate::hex_tables::ByteCategory;
 use crate::xv_state::ReaderState;
-use crate::hex_view_printers::{OffsetPrinter, HexPrinter, VisualPrinter};
+use crate::hex_view_printers::{OffsetPrinter, HexPrinter, VisualPrinter, TableSet};
 
 pub struct HexView {
     reader: HexReader,
@@ -26,12 +24,8 @@ pub struct HexView {
     hex_column_size: Vec2,
     visual_column_pos: Vec2,
     visual_column_size: Vec2,
-    prestyled_hex_table: Vec<StyledString>,
-    prestyled_hex_table_positive: Vec<StyledString>,
-    prestyled_hex_table_negative: Vec<StyledString>,
-    prestyled_visual_table: Vec<StyledString>,
-    prestyled_visual_table_positive: Vec<StyledString>,
-    prestyled_visual_table_negative: Vec<StyledString>,
+    hex_tables: TableSet,
+    visual_tables: TableSet,
 }
 
 impl HexView {
@@ -47,12 +41,8 @@ impl HexView {
             hex_column_size: Vec2::new(0, 0),
             visual_column_pos: Vec2::new(0, 0),
             visual_column_size: Vec2::new(0, 0),
-            prestyled_hex_table: Vec::new(),
-            prestyled_hex_table_positive: Vec::new(),
-            prestyled_hex_table_negative: Vec::new(),
-            prestyled_visual_table: Vec::new(),
-            prestyled_visual_table_positive: Vec::new(),
-            prestyled_visual_table_negative: Vec::new(),
+            hex_tables: TableSet::new(),
+            visual_tables: TableSet::new(),
         }
     }
     
@@ -126,7 +116,7 @@ impl HexView {
     }
     
     fn toggle_visual(&mut self) -> EventResult {
-        self.prestyled_visual_table.clear();
+        self.visual_tables.clear();
         match self.reader.get_visual_mode() {
             VisualMode::Unicode => {
                 self.reader.set_visual_mode(VisualMode::Ascii);
@@ -264,27 +254,11 @@ impl HexView {
     }
     
     fn build_prestyled_hex_table(&mut self) {
-        self.prestyled_hex_table = self.reader.map_hex_table(|category, s| {
-            StyledString::styled(s, category_to_color(category))
-        });
-        self.prestyled_hex_table_positive = self.reader.map_hex_table(|_category, s| {
-            StyledString::styled(s, ColorStyle::highlight_inactive())
-        });
-        self.prestyled_hex_table_negative = self.reader.map_hex_table(|_category, s| {
-            StyledString::styled(s, ColorStyle::highlight())
-        });
+        self.reader.generate_hex_tables(&mut self.hex_tables);
     }
     
     fn build_prestyled_visual_table(&mut self) {
-        self.prestyled_visual_table = self.reader.map_visual_table(|category, s| {
-            StyledString::styled(s, category_to_color(category))
-        });
-        self.prestyled_visual_table_positive = self.reader.map_visual_table(|_category, s| {
-            StyledString::styled(s, ColorStyle::highlight_inactive())
-        });
-        self.prestyled_visual_table_negative = self.reader.map_visual_table(|_category, s| {
-            StyledString::styled(s, ColorStyle::highlight())
-        });
+        self.reader.generate_visual_tables(&mut self.visual_tables);
     }
 }
 
@@ -308,10 +282,8 @@ impl View for HexView {
         let mut hex_printer = HexPrinter {
             max_width: 0,
             pos: Vec2::new(0, 0),
-            table_neu: &self.prestyled_hex_table,
-            table_pos: &self.prestyled_hex_table_positive,
-            table_neg: &self.prestyled_hex_table_negative,
-            printer: &printer.offset(self.hex_column_pos).cropped(self.hex_column_size)
+            printer: &printer.offset(self.hex_column_pos).cropped(self.hex_column_size),
+            tables: &self.hex_tables,
         };
         self.reader.visit_hex(&mut hex_printer);
 
@@ -321,20 +293,18 @@ impl View for HexView {
             
             let mut visual_printer = VisualPrinter {
                 pos: Vec2::new(0,0),
-                table_neu: &self.prestyled_visual_table,
-                table_pos: &self.prestyled_visual_table_positive,
-                table_neg: &self.prestyled_visual_table_negative,
-                printer: &printer.offset(self.visual_column_pos).cropped(self.visual_column_size)
+                printer: &printer.offset(self.visual_column_pos).cropped(self.visual_column_size),
+                tables: &self.visual_tables,
             };
             self.reader.visit_hex(&mut visual_printer);
         }
     }
 
     fn layout(&mut self, constraint: Vec2) {
-        if self.prestyled_hex_table.is_empty() {
+        if self.hex_tables.is_empty() {
             self.build_prestyled_hex_table();
         }
-        if self.prestyled_visual_table.is_empty() {
+        if self.visual_tables.is_empty() {
             self.build_prestyled_visual_table();
         }
         if self.invalidated_resize {
@@ -441,15 +411,6 @@ impl View for HexView {
             Event::Mouse { offset, position, event } => self.on_mouse_event(offset, position, event),
             _ => EventResult::Ignored
         }
-    }
-}
-
-fn category_to_color(category: &ByteCategory) -> ColorStyle {
-    match category {
-        ByteCategory::AsciiControl => ColorStyle::title_primary(),
-        ByteCategory::AsciiPrintable => ColorStyle::primary(),
-        ByteCategory::AsciiWhitespace => ColorStyle::secondary(),
-        ByteCategory::Other => ColorStyle::title_secondary()
     }
 }
 
