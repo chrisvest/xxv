@@ -28,6 +28,7 @@ mod byte_reader;
 mod hex_tables;
 mod hex_reader;
 mod hex_view;
+mod hex_view_printers;
 mod set_width_dialog;
 mod goto_dialog;
 mod open_file_dialog;

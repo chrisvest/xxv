@@ -4,18 +4,16 @@ use cursive::align::HAlign;
 use cursive::event::{Event, Key, MouseEvent};
 use cursive::event::EventResult;
 use cursive::Printer;
-use cursive::theme::{ColorStyle, Style};
+use cursive::theme::ColorStyle;
 use cursive::traits::View;
 use cursive::utils::markup::StyledString;
-use cursive::utils::span::*;
 use cursive::Vec2;
 use unicode_width::UnicodeWidthStr;
 
 use crate::hex_reader::{HexReader, VisualMode, Highlight};
-use crate::hex_reader::HexVisitor;
-use crate::hex_reader::OffsetsVisitor;
 use crate::hex_tables::ByteCategory;
 use crate::xv_state::ReaderState;
+use crate::hex_view_printers::{OffsetPrinter, HexPrinter, VisualPrinter};
 
 pub struct HexView {
     reader: HexReader,
@@ -443,107 +441,6 @@ impl View for HexView {
             Event::Mouse { offset, position, event } => self.on_mouse_event(offset, position, event),
             _ => EventResult::Ignored
         }
-    }
-}
-
-struct OffsetPrinter<'a, 'b, 'x> {
-    pos: Vec2,
-    printer: &'x Printer<'a, 'b>,
-    spans: Vec<IndexedSpan<Style>>
-}
-
-impl<'a, 'b, 'x> OffsetsVisitor for OffsetPrinter<'a, 'b, 'x> {
-    fn offset(&mut self, offset: &str) {
-        if self.spans.is_empty() {
-            self.spans.push(IndexedSpan {
-                content: IndexedCow::Borrowed {start: 0, end: offset.len()},
-                attr: Style::from(ColorStyle::secondary()),
-                width: offset.width()
-            });
-        }
-        let styled_offset = SpannedStr::new(offset, &self.spans);
-        self.printer.print_styled(self.pos, styled_offset);
-        self.pos.y += 1;
-    }
-
-    fn end(&mut self) {
-        // Nothing to do.
-    }
-}
-
-struct HexPrinter<'a, 'b, 'x> {
-    max_width: usize,
-    pos: Vec2,
-    table_neu: &'x [StyledString],
-    table_pos: &'x [StyledString],
-    table_neg: &'x [StyledString],
-    printer: &'x Printer<'a, 'b>
-}
-
-const GROUP_SEP: &str = "\u{00A6}";
-
-impl<'a, 'b, 'x> HexVisitor for HexPrinter<'a, 'b, 'x> {
-    fn byte(&mut self, index: usize, highlight: Highlight) {
-        if self.pos.x != 0 {
-            self.pos.x += 1;
-        }
-        let table = match highlight {
-            Highlight::Neutral => self.table_neu,
-            Highlight::Positive => self.table_pos,
-            Highlight::Negative => self.table_neg,
-        };
-        let hex_element = &table[index];
-        self.printer.print_styled(self.pos, hex_element.into());
-        self.pos.x += 2;
-    }
-
-    fn group(&mut self) {
-        self.printer.print(self.pos, GROUP_SEP);
-    }
-
-    fn next_line(&mut self) {
-        self.pos.y += 1;
-        self.max_width = self.max_width.max(self.pos.x);
-        self.pos.x = 0;
-    }
-
-    fn end(&mut self) {
-        self.max_width = self.max_width.max(self.pos.x);
-    }
-}
-
-struct VisualPrinter<'a, 'b, 'x> {
-    pos: Vec2,
-    table_neu: &'x [StyledString],
-    table_pos: &'x [StyledString],
-    table_neg: &'x [StyledString],
-    printer: &'x Printer<'a, 'b>
-}
-
-impl<'a, 'b, 'x> HexVisitor for VisualPrinter<'a, 'b, 'x> {
-    fn byte(&mut self, index: usize, highlight: Highlight) {
-        let table = match highlight {
-            Highlight::Neutral => self.table_neu,
-            Highlight::Positive => self.table_pos,
-            Highlight::Negative => self.table_neg,
-        };
-        let vis_element = &table[index];
-        self.printer.print_styled(self.pos, vis_element.into());
-        self.pos.x += vis_element.width();
-    }
-
-    fn group(&mut self) {
-        self.printer.print(self.pos, GROUP_SEP);
-        self.pos.x += 1;
-    }
-
-    fn next_line(&mut self) {
-        self.pos.y += 1;
-        self.pos.x = 0;
-    }
-
-    fn end(&mut self) {
-        // Nothing to do.
     }
 }
 
