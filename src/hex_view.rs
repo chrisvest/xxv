@@ -136,6 +136,8 @@ impl HexView {
     }
     
     fn reload_data(&mut self) -> EventResult {
+        self.reader.clear_highlights();
+        self.reader.capture_before_image();
         self.invalidated_data_changed = true;
         EventResult::Consumed(None)
     }

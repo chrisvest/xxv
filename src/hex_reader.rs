@@ -45,6 +45,7 @@ pub struct HexReader {
     pub window_pos: (u64,u64),
     pub window_size: (u16,u16),
     capture: Vec<u8>,
+    before_image: Vec<u8>,
     highlight: BTreeMap<u64,Highlight>,
     pub vis_mode: VisualMode,
 }
@@ -58,6 +59,7 @@ impl HexReader {
             window_pos: (0,0),
             window_size: (16,32),
             capture: Vec::new(),
+            before_image: Vec::new(),
             highlight: BTreeMap::new(),
             vis_mode: VisualMode::Unicode
         })
@@ -78,6 +80,14 @@ impl HexReader {
     pub fn get_length(&self) -> u64 {
         self.reader.get_length()
     }
+
+    pub fn get_row_offsets_width(&self) -> usize {
+        if self.reader.use_large_addresses() { 16 + 2 } else { 8 + 2 }
+    }
+
+    pub fn get_lines_in_file(&self) -> u64 {
+        self.reader.get_length() / self.line_width
+    }
     
     pub fn capture(&mut self) -> Result<()> {
         let (x, y) = self.window_pos;
@@ -85,15 +95,46 @@ impl HexReader {
         self.capture.clear();
         // xxx Possible optimisation, since 'capture' is a Vec of u8 where drop is a no-op.
 //        unsafe { self.capture.set_len(0) };
-        self.reader.get_window((x, y, w, h), self.line_width, &mut self.capture)
+        self.reader.get_window((x, y, w, h), self.line_width, &mut self.capture)?;
+
+        if !self.before_image.is_empty() {
+            self.compute_window_diff();
+            self.before_image.clear();
+        }
+
+        Ok(())
     }
     
-    pub fn get_row_offsets_width(&self) -> usize {
-        if self.reader.use_large_addresses() { 16 + 2 } else { 8 + 2 }
+    fn compute_window_diff(&mut self) {
+        let line_cap = u64::from(self.window_size.0);
+        let line_width = self.line_width;
+        let mut line_offset = line_width * self.window_pos.1 + self.window_pos.0;
+        
+        let mut before_itr = self.before_image.iter();
+        let mut after_itr = self.capture.iter();
+        let mut i = 0;
+        while let Some(a) = after_itr.next() {
+            let offset = line_offset + i;
+            
+            if let Some(b) = before_itr.next() {
+                if a != b {
+                    self.highlight.insert(offset, Highlight::Negative);
+                }
+            } else {
+                break;
+            }
+            
+            i += 1;
+            if i == line_cap {
+                i = 0;
+                line_offset += line_width;
+            }
+        }
     }
     
-    pub fn get_lines_in_file(&self) -> u64 {
-        self.reader.get_length() / self.line_width
+    pub fn capture_before_image(&mut self) {
+        self.before_image.clear();
+        self.before_image.clone_from(&self.capture);
     }
     
     pub fn clear_highlights(&mut self) {
