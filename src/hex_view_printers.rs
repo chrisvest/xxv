@@ -1,9 +1,10 @@
-use cursive::{Vec2, Printer};
-use cursive::utils::span::{IndexedSpan, IndexedCow, SpannedStr};
-use cursive::theme::{Style, ColorStyle};
-use crate::hex_reader::{OffsetsVisitor, HexVisitor, Highlight};
+use cursive::{Printer, Vec2};
+use cursive::theme::{ColorStyle, Style};
 use cursive::utils::markup::StyledString;
+use cursive::utils::span::{IndexedCow, IndexedSpan, SpannedStr};
 use unicode_width::UnicodeWidthStr;
+
+use crate::hex_reader::{HexVisitor, Highlight, OffsetsVisitor};
 use crate::hex_tables::ByteCategory;
 
 const GROUP_SEP: &str = "\u{00A6}";
