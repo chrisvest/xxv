@@ -819,7 +819,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "xv"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "backtrace 0.3.26 (registry+https://github.com/rust-lang/crates.io-index)",
  "cursive 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
