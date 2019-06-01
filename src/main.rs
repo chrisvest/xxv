@@ -16,9 +16,11 @@
 extern crate serde;
 extern crate serde_derive;
 
-use std::io::Result;
+use std::error::Error;
+use std::io::ErrorKind;
+use std::process::exit;
 
-use crate::utilities::{PKG_NAME, PKG_VERSION, PKG_DESCRIPTION};
+use crate::utilities::{PKG_DESCRIPTION, PKG_NAME, PKG_VERSION};
 use crate::xv_state::XvState;
 
 mod utilities;
@@ -37,7 +39,7 @@ mod status_bar;
 mod help_text;
 mod xv_tui;
 
-fn main() -> Result<()> {
+fn main() {
     panic_hook::install();
 
     let mut args = std::env::args_os();
@@ -48,7 +50,7 @@ fn main() -> Result<()> {
         eprintln!("Error: The 'file' argument is required.");
         eprintln!();
         eprintln!("For more information, try --help.");
-        return Ok(());
+        exit(64); // EX_USAGE from sysexits.h
     }
     
     let file_name = file_arg.unwrap();
@@ -58,16 +60,30 @@ fn main() -> Result<()> {
         eprintln!("{}", PKG_DESCRIPTION);
         eprintln!();
         eprintln!("{}", include_str!("usage.txt"));
-        return Ok(());
+        return;
     }
 
     if file_name.eq("-v") || file_name.eq("--version") {
         eprintln!("{} {}", PKG_NAME, PKG_VERSION);
-        return Ok(());
+        return;
     }
     
     let mut state = XvState::load();
-    let h_reader = state.open_reader(file_name)?;
-    xv_tui::run_tui(h_reader, state);
-    Ok(())
+    match state.open_reader(&file_name) {
+        Ok(h_reader) => xv_tui::run_tui(h_reader, state),
+        Err(e) => {
+            match e.kind() {
+                ErrorKind::NotFound => {
+                    eprintln!("File not found: {:#?}", &file_name);
+                },
+                ErrorKind::PermissionDenied => {
+                    eprintln!("Permission denied: {:#?}", &file_name);
+                },
+                _ => {
+                    eprintln!("{}: {:#?}", e.description(), &file_name);
+                }
+            }
+            exit(1)
+        }
+    }
 }
