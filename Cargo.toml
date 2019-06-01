@@ -5,6 +5,7 @@ authors = ["Chris Vest <mr.chrisvest@gmail.com>"]
 edition = "2018"
 description = "A hex viewer for the terminal, with a visual text user interface."
 keywords = ["hex", "binary", "ncurses"]
+categories = ["command-line-utilities", "development-tools"]
 license = "Apache-2.0"
 homepage = "https://chrisvest.github.io/xv/"
 repository = "https://github.com/chrisvest/xv"
