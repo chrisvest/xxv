@@ -36,7 +36,7 @@ time = "0.1.42"
 tempfile = "3.0.7"
 
 [features]
-default = ["ncurses-backend"]
+default = ["pancurses-backend"]
 ncurses-backend = ["cursive/ncurses-backend"]
 pancurses-backend = ["cursive/pancurses-backend"]
 termion-backend = ["cursive/termion-backend"]
