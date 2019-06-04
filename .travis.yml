@@ -10,6 +10,7 @@ os:
         - windows
 install:
         - cargo install --force cargo-kcov
+        - if [ $TRAVIS_OS_NAME = linux ]; kcov --version; fi
 script:
         - cargo build
         - cargo test
