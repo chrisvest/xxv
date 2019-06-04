@@ -149,7 +149,7 @@ impl XvState {
             self.recent_files.remove(index);
             self.recent_files.insert(0, reader);
         } else if self.recent_files.len() >= self.max_recent_files {
-            self.recent_files.remove(0);
+            self.recent_files.remove(self.recent_files.len() - 1);
             self.recent_files.insert(0, reader);
         } else {
             self.recent_files.insert(0, reader);

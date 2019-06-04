@@ -1,4 +1,9 @@
+use std::error::Error as ErrorTrait;
+use std::ffi::OsStr;
+use std::io::Error;
+use std::io::ErrorKind;
 use std::num::ParseIntError;
+use std::process::exit;
 use std::rc::Rc;
 
 use cursive::views::EditView;
@@ -32,4 +37,21 @@ pub fn project_dirs() -> Option<ProjectDirs> {
 
 pub fn get_content(ev: &mut EditView) -> Rc<String> {
     ev.get_content()
+}
+
+pub fn exit_reader_open_error<T>(error: Error, file_name: T) -> !
+    where T: AsRef<OsStr> {
+    let name = file_name.as_ref();
+    match error.kind() {
+        ErrorKind::NotFound => {
+            eprintln!("File not found: {:#?}", name);
+        },
+        ErrorKind::PermissionDenied => {
+            eprintln!("Permission denied: {:#?}", name);
+        },
+        _ => {
+            eprintln!("{}: {:#?}", error.description(), name);
+        }
+    }
+    exit(1)
 }

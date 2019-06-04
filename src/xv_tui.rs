@@ -15,13 +15,12 @@ use crate::panic_hook::archive_last_crash;
 use crate::set_width_dialog::open_set_width_dialog;
 use crate::status_bar::new_status_bar;
 use crate::switch_file_dialog::switch_file_dialog;
-use crate::utilities::PKG_REPOSITORY;
+use crate::utilities::{PKG_REPOSITORY, exit_reader_open_error};
 use crate::xv_state::XvState;
 
-pub fn run_tui(reader: HexReader, state: XvState) {
+pub fn run_tui(reader: Option<HexReader>, mut state: XvState) {
     let mut tui = Cursive::default();
     tui.set_theme(state.current_theme());
-    tui.set_user_data(state);
     
     tui.add_global_callback('q', quit);
     tui.add_global_callback(Key::Esc, quit);
@@ -33,7 +32,20 @@ pub fn run_tui(reader: HexReader, state: XvState) {
     tui.add_global_callback('o', open_file_dialog);
     tui.add_global_callback('s', switch_file_dialog);
 
-    let hex_view = HexView::new(reader).with_id("hex_view");
+    let hex_view = match reader {
+        Some(reader) => HexView::new(reader),
+        None => {
+            let recent = state.recent_files();
+            let file_name = recent[0].path().to_path_buf();
+            match state.open_reader(&file_name) {
+                Ok(reader) => HexView::new(reader),
+                Err(e) => exit_reader_open_error(e, file_name.as_os_str())
+            }
+        }
+    }.with_id("hex_view");
+
+    tui.set_user_data(state);
+    
     let status_bar = new_status_bar();
 
     tui.screen_mut().add_transparent_layer(LinearLayout::vertical()

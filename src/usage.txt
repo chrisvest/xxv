@@ -1,9 +1,11 @@
 USAGE:
-    xv <file>
+    xv [<file>]
 
 FLAGS:
     -h, --help      Prints help information
     -v, --version   Prints version information
 
 ARGS:
-    <file>          File to open
+    <file>          File to open.
+                    If omitted, the previous XV state is restored.
+                    If there is no previous state, then this argument is required.
