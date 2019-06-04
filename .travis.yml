@@ -1,13 +1,15 @@
 language: rust
 cache: cargo
+addons:
+        apt:
+                packages:
+                        - kcov
 os:
         - linux
         - osx
         - windows
-
 install:
         - cargo install cargo-kcov
-
 script:
         - cargo build
         - cargo test
