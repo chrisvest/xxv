@@ -13,5 +13,5 @@ install:
 script:
         - cargo build
         - cargo test
-        - cargo kcov --coveralls
+        - if [ $TRAVIS_OS_NAME = linux ]; then cargo kcov --coveralls; fi
 
