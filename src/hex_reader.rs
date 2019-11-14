@@ -145,7 +145,7 @@ impl HexReader {
         self.highlight.insert(offset, highlight);
     }
     
-    pub fn visit_row_offsets(&self, visitor: &mut OffsetsVisitor) {
+    pub fn visit_row_offsets(&self, visitor: &mut dyn OffsetsVisitor) {
         let w = usize::from(self.window_size.0);
         let h = usize::from(self.window_size.1);
         let base_offset = self.window_pos.1 * self.line_width;
@@ -170,7 +170,7 @@ impl HexReader {
     }
     
     #[inline]
-    pub fn visit_hex(&self, visitor: &mut HexVisitor) {
+    pub fn visit_hex(&self, visitor: &mut dyn HexVisitor) {
         let capture = self.capture.as_slice();
         let line_cap = u64::from(self.window_size.0);
         let line_width = self.line_width;
