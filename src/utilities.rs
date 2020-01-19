@@ -1,4 +1,3 @@
-use std::error::Error as ErrorTrait;
 use std::ffi::OsStr;
 use std::io::Error;
 use std::io::ErrorKind;
@@ -27,7 +26,7 @@ pub fn parse_number(number_str: &str) -> Result<u64, ParseIntError> {
 pub fn parse_number_or_zero(number_str: &str) -> u64 {
     match parse_number(number_str) {
         Ok(number) => number,
-        _ => 0
+        _ => 0,
     }
 }
 
@@ -40,17 +39,19 @@ pub fn get_content(ev: &mut EditView) -> Rc<String> {
 }
 
 pub fn exit_reader_open_error<T>(error: Error, file_name: T) -> !
-    where T: AsRef<OsStr> {
+where
+    T: AsRef<OsStr>,
+{
     let name = file_name.as_ref();
     match error.kind() {
         ErrorKind::NotFound => {
             eprintln!("File not found: {:#?}", name);
-        },
+        }
         ErrorKind::PermissionDenied => {
             eprintln!("Permission denied: {:#?}", name);
-        },
+        }
         _ => {
-            eprintln!("{}: {:#?}", error.description(), name);
+            eprintln!("{}: {:#?}", error, name);
         }
     }
     exit(1)

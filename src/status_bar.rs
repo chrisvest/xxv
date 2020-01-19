@@ -6,8 +6,11 @@ use cursive::views::{LinearLayout, PaddedView, TextView};
 pub fn new_status_bar() -> PaddedView<LinearLayout> {
     let hints_style = ColorStyle::new(
         ColorType::Palette(PaletteColor::Tertiary),
-        ColorType::Palette(PaletteColor::Background));
-    let hint_key_style = Style::none().combine(hints_style).combine(Effect::Underline);
+        ColorType::Palette(PaletteColor::Background),
+    );
+    let hint_key_style = Style::none()
+        .combine(hints_style)
+        .combine(Effect::Underline);
 
     let mut hints_bar_string = StyledString::new();
     hints_bar_string.append_styled("Q", hint_key_style);
@@ -25,6 +28,11 @@ pub fn new_status_bar() -> PaddedView<LinearLayout> {
 
     let hints_bar = TextView::new(hints_bar_string);
 
-    PaddedView::new((1, 1, 0, 0), LinearLayout::horizontal()
-        .child(hints_bar.full_width()))
+    PaddedView::lrtb(
+        1,
+        1,
+        0,
+        0,
+        LinearLayout::horizontal().child(hints_bar.full_width()),
+    )
 }
