@@ -1,10 +1,10 @@
 use std::io::Error;
 use std::path::PathBuf;
 
+use cursive::Cursive;
 use cursive::event::Key;
 use cursive::traits::{Boxable, Identifiable};
 use cursive::views::{Dialog, LinearLayout, TextView};
-use cursive::Cursive;
 
 use crate::goto_dialog::open_goto_dialog;
 use crate::help_text::show_help;
@@ -17,6 +17,17 @@ use crate::status_bar::new_status_bar;
 use crate::switch_file_dialog::switch_file_dialog;
 use crate::utilities::{exit_reader_open_error, PKG_REPOSITORY};
 use crate::xv_state::XvState;
+
+pub const OBJ_HEX_VIEW: &str = "hex_view";
+pub const OBJ_SWITCHER: &str = "file_switcher";
+pub const OBJ_CURRENT_DIR: &str = "current_dir";
+pub const OBJ_DIR_SELECTOR: &str = "dir_selector";
+pub const OBJ_FILE_SELECTOR: &str = "file_selector";
+pub const OBJ_LINE_WIDTH: &str = "line_width";
+pub const OBJ_GROUP: &str = "group_width";
+pub const OBJ_GOTO_OFFSET: &str = "goto_offset";
+pub const OBJ_GOTO_MUL1: &str = "goto_mul1";
+pub const OBJ_GOTO_MUL2: &str = "goto_mul2";
 
 pub fn run_tui(reader: Option<HexReader>, mut state: XvState) {
     let mut tui = Cursive::default();
@@ -43,7 +54,7 @@ pub fn run_tui(reader: Option<HexReader>, mut state: XvState) {
             }
         }
     }
-    .with_name("hex_view");
+    .with_name(OBJ_HEX_VIEW);
 
     tui.set_user_data(state);
 
@@ -65,7 +76,7 @@ pub fn run_tui(reader: Option<HexReader>, mut state: XvState) {
 
 fn quit(s: &mut Cursive) {
     let reader_state = s
-        .call_on_name("hex_view", |view: &mut HexView| view.get_reader_state())
+        .call_on_name(OBJ_HEX_VIEW, |view: &mut HexView| view.get_reader_state())
         .unwrap();
     s.with_user_data(|state: &mut XvState| {
         state.close_reader(reader_state);

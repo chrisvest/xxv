@@ -8,7 +8,7 @@ use cursive::Cursive;
 
 use crate::hex_view::HexView;
 use crate::xv_state::XvState;
-use crate::xv_tui::ShowError;
+use crate::xv_tui::{ShowError, OBJ_SWITCHER, OBJ_HEX_VIEW};
 
 pub fn switch_file_dialog(s: &mut Cursive) {
     let mut file_selector: SelectView<OsString> = SelectView::new().autojump();
@@ -23,7 +23,7 @@ pub fn switch_file_dialog(s: &mut Cursive) {
     .unwrap();
 
     let layout = LinearLayout::vertical()
-        .child(ScrollView::new(file_selector.with_name("file_selector")).scroll_x(true))
+        .child(ScrollView::new(file_selector.with_name(OBJ_SWITCHER)).scroll_x(true))
         .max_height((s.screen_size().y - 11).min(50))
         .max_width((s.screen_size().x - 20).min(80));
 
@@ -44,13 +44,13 @@ pub fn switch_file_dialog(s: &mut Cursive) {
 
 fn do_switch_file(s: &mut Cursive) {
     let file_selector = s
-        .find_name::<SelectView<OsString>>("file_selector")
+        .find_name::<SelectView<OsString>>(OBJ_SWITCHER)
         .unwrap();
     s.pop_layer();
     if let Some(rc_file) = file_selector.selection() {
         let file_name = rc_file.as_ref();
         let current_file = s
-            .call_on_name("hex_view", |view: &mut HexView| view.get_reader_state())
+            .call_on_name(OBJ_HEX_VIEW, |view: &mut HexView| view.get_reader_state())
             .unwrap();
         if let Some(reader_result) = s.with_user_data(|state: &mut XvState| {
             let path = PathBuf::from(file_name);
@@ -61,7 +61,7 @@ fn do_switch_file(s: &mut Cursive) {
             result
         }) {
             match reader_result {
-                Ok(reader) => s.call_on_name("hex_view", |view: &mut HexView| {
+                Ok(reader) => s.call_on_name(OBJ_HEX_VIEW, |view: &mut HexView| {
                     view.switch_reader(reader);
                 }),
                 Err(error) => {
@@ -75,7 +75,7 @@ fn do_switch_file(s: &mut Cursive) {
 
 fn remove_selected_file(s: &mut Cursive) {
     let mut file_selector = s
-        .find_name::<SelectView<OsString>>("file_selector")
+        .find_name::<SelectView<OsString>>(OBJ_SWITCHER)
         .unwrap();
     if let Some(id) = file_selector.selected_id() {
         file_selector.remove_item(id)(s);

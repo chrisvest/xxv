@@ -5,10 +5,11 @@ use cursive::Cursive;
 
 use crate::hex_view::HexView;
 use crate::utilities::{get_content, parse_number_or_zero};
+use crate::xv_tui::{OBJ_HEX_VIEW, OBJ_GOTO_OFFSET, OBJ_GOTO_MUL1, OBJ_GOTO_MUL2};
 
 pub fn open_goto_dialog(s: &mut Cursive) {
     let (line_width, length) = s
-        .call_on_name("hex_view", |v: &mut HexView| {
+        .call_on_name(OBJ_HEX_VIEW, |v: &mut HexView| {
             (v.get_line_width(), v.get_length())
         })
         .unwrap();
@@ -18,16 +19,16 @@ pub fn open_goto_dialog(s: &mut Cursive) {
         .child(
             EditView::new()
                 .content("0")
-                .with_name("offset")
+                .with_name(OBJ_GOTO_OFFSET)
                 .min_width(18),
         )
         .child(TextView::new(" + "))
-        .child(EditView::new().content("0").with_name("mul1").min_width(18))
+        .child(EditView::new().content("0").with_name(OBJ_GOTO_MUL1).min_width(18))
         .child(TextView::new(" * "))
         .child(
             EditView::new()
                 .content(format!("{}", line_width))
-                .with_name("mul2")
+                .with_name(OBJ_GOTO_MUL2)
                 .min_width(18),
         );
 
@@ -64,9 +65,9 @@ pub fn open_goto_dialog(s: &mut Cursive) {
 }
 
 fn do_goto(s: &mut Cursive) {
-    let offset_str = s.call_on_name("offset", get_content).unwrap();
-    let mul1_str = s.call_on_name("mul1", get_content).unwrap();
-    let mul2_str = s.call_on_name("mul2", get_content).unwrap();
+    let offset_str = s.call_on_name(OBJ_GOTO_OFFSET, get_content).unwrap();
+    let mul1_str = s.call_on_name(OBJ_GOTO_MUL1, get_content).unwrap();
+    let mul2_str = s.call_on_name(OBJ_GOTO_MUL2, get_content).unwrap();
 
     s.pop_layer();
 
@@ -76,7 +77,7 @@ fn do_goto(s: &mut Cursive) {
 
     let target = offset + mul1 * mul2;
 
-    s.call_on_name("hex_view", |view: &mut HexView| {
+    s.call_on_name(OBJ_HEX_VIEW, |view: &mut HexView| {
         view.go_to_offset(target);
     });
 }
