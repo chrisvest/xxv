@@ -36,5 +36,6 @@ time = "0.1.42"
 tempfile = "3.1.0"
 
 [features]
-default = ["cursive/crossterm-backend"]
+default = ["cursive/ncurses-backend"]
+crossterm = ["cursive/crossterm-backend"]
 

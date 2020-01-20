@@ -10,7 +10,7 @@ Licensed under the Apache-2.0 software license.
 
 Get it from https://crates.io/crates/xv[crates.io] by running `cargo install xv` in your terminal.
 Make sure you have a proper https://github.com/chrisvest/xv/wiki[development environment] first, though.
-Windows is supported with the Pancurses backend: `cargo install xv --no-default-features --features pancurses-backend`.
+Windows is supported with the Crossterm backend: `cargo install xv --no-default-features --features crossterm`.
 
 image::docs/screenshot.png[Screenshot showing the XV hex viewer in a terminal]
 
