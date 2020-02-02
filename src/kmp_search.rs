@@ -1,7 +1,6 @@
-use std::fs::File;
-use std::ops::Range;
 use std::convert::TryFrom;
-use std::io::{BufReader, Read, Bytes, BufRead};
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 pub fn search<F>(file: File, bytes: &[u8], mut consumer: F)
     where F: FnMut(u64) {
@@ -62,8 +61,8 @@ fn to_usize(n: i32) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::{Write, Seek, SeekFrom, BufRead};
-    use std::fs::OpenOptions;
+
+    use std::io::{Seek, SeekFrom, Write};
 
     #[test]
     fn searching_in_file() {

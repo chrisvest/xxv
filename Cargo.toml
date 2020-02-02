@@ -15,7 +15,6 @@ readme = "Readme.adoc"
 repository = "chrisvest/xv"
 
 [profile.release]
-debug = true
 overflow-checks = true
 codegen-units = 1
 lto = true

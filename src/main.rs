@@ -22,8 +22,6 @@ use std::process::exit;
 
 use crate::utilities::{exit_reader_open_error, PKG_DESCRIPTION, PKG_NAME, PKG_VERSION};
 use crate::xv_state::XvState;
-use std::fs::OpenOptions;
-use crate::kmp_search::search;
 
 mod utilities;
 mod panic_hook;
@@ -61,18 +59,6 @@ fn main() {
 
         if option.eq("-v") || option.eq("--version") {
             eprintln!("{} {}", PKG_NAME, PKG_VERSION);
-            return;
-        }
-        
-        if option.eq("-b") {
-            let fname =
-                "/path/to/very/large/file";
-            let file = OpenOptions::new().read(true).open(fname).unwrap();
-
-            let mut counter: i64 = 0;
-            search(file, b"Some string to search for", |hit| counter += 1);
-
-            println!("{}", counter);
             return;
         }
     }

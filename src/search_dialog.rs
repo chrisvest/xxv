@@ -45,7 +45,7 @@ pub fn search_dialog(s: &mut Cursive, ascii: bool) {
     s.add_layer(esc_view);
 }
 
-fn edit_ascii(s: &mut Cursive, text: &str, cursor: usize) {
+fn edit_ascii(s: &mut Cursive, text: &str, _cursor: usize) {
     s.call_on_name(OBJ_FIND_HEX, |v: &mut EditView| {
         let bytes = text.as_bytes();
         let mut hex_text = String::new();
@@ -56,7 +56,7 @@ fn edit_ascii(s: &mut Cursive, text: &str, cursor: usize) {
     });
 }
 
-fn edit_hex(s: &mut Cursive, text: &str, cursor: usize) {
+fn edit_hex(s: &mut Cursive, _text: &str, cursor: usize) {
     let mut ascii = String::new();
     s.call_on_name(OBJ_FIND_HEX, |v: &mut EditView| {
         let mut hex_text = v.get_content().to_string();
@@ -66,7 +66,6 @@ fn edit_hex(s: &mut Cursive, text: &str, cursor: usize) {
             ascii.push_str(UNICODE_TEXT_TABLE[usize::from(b)]);
         }
         if removed_illegal_digits {
-            let len = hex_text.len();
             v.set_content(hex_text);
             v.set_cursor(cursor - 1);
         };
@@ -104,7 +103,7 @@ fn hex_to_bytes(hex_text: &mut String, bytes: &mut Vec<u8>) -> bool {
     return modified;
 }
 
-fn on_find(s: &mut Cursive, text: &str) {
+fn on_find(s: &mut Cursive, _text: &str) {
     do_find(s);
 }
 
