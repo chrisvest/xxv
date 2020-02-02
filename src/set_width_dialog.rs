@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
 use cursive::event::Key;
-use cursive::traits::{Boxable, Identifiable};
+use cursive::traits::{Resizable, Nameable};
 use cursive::views::{Dialog, EditView, LinearLayout, OnEventView, TextView};
 use cursive::Cursive;
 

@@ -6,6 +6,7 @@ use crate::byte_reader::TilingByteReader;
 use crate::hex_tables::*;
 use std::collections::btree_map::BTreeMap;
 use crate::hex_view_printers::TableSet;
+use crate::kmp_search;
 
 #[derive(Copy, Clone, Debug)]
 pub enum VisualMode {
@@ -14,7 +15,7 @@ pub enum VisualMode {
     Off,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum Highlight {
     Neutral,
     Positive,
@@ -46,7 +47,7 @@ pub struct HexReader {
     pub window_size: (u16,u16),
     capture: Vec<u8>,
     before_image: Vec<u8>,
-    highlight: BTreeMap<u64,Highlight>,
+    highlight: BTreeMap<u64,(u64,Highlight)>,
     pub vis_mode: VisualMode,
 }
 
@@ -113,14 +114,20 @@ impl HexReader {
         let mut before_itr = self.before_image.iter();
         let mut after_itr = self.capture.iter();
         let mut i = 0;
+        let mut begin_offset: Option<u64> = None;
         while let Some(a) = after_itr.next() {
             let offset = line_offset + i;
             
             if let Some(b) = before_itr.next() {
-                if a != b {
-                    self.highlight.insert(offset, Highlight::Negative);
+                if a != b && begin_offset.is_none() {
+                    begin_offset = Some(offset);
+                } else if let Some(begin) = begin_offset {
+                    self.highlight.insert(begin, (offset - begin, Highlight::Negative));
                 }
             } else {
+                if let Some(begin) = begin_offset {
+                    self.highlight.insert(begin, (offset - begin, Highlight::Negative));
+                }
                 break;
             }
             
@@ -142,7 +149,7 @@ impl HexReader {
     }
     
     pub fn highlight(&mut self, offset: u64, highlight: Highlight) {
-        self.highlight.insert(offset, highlight);
+        self.highlight.insert(offset, (1,highlight));
     }
     
     pub fn visit_row_offsets(&self, visitor: &mut dyn OffsetsVisitor) {
@@ -181,15 +188,17 @@ impl HexReader {
         let mut hl = hl_iter.next();
 
         let mut i = 0;
+        let mut highlight = Highlight::Neutral;
+        let mut hl_end = 0;
         for b in capture {
             let offset = line_offset + i;
-            let mut highlight = Highlight::Neutral;
             while let Some((&target, h)) = hl {
                 if target < offset {
                     hl = hl_iter.next();
                 } else if target == offset {
                     hl = hl_iter.next();
-                    highlight = h.to_owned();
+                    hl_end = h.0 + i;
+                    highlight = h.1;
                     break;
                 } else {
                     break;
@@ -200,6 +209,9 @@ impl HexReader {
             visitor.byte(r, highlight);
 
             i += 1;
+            if i == hl_end {
+                highlight = Highlight::Neutral;
+            }
             if i == line_cap {
                 visitor.next_line();
                 i = 0;
@@ -239,6 +251,14 @@ impl HexReader {
     
     pub fn get_visual_mode(&self) -> &VisualMode {
         &self.vis_mode
+    }
+    
+    pub fn search(&mut self, bytes: &[u8]) {
+        let file = self.reader.open_file().unwrap();
+        let len = u64::try_from(bytes.len()).unwrap();
+        kmp_search::search(file, bytes, |start| {
+            self.highlight.insert(start, (len, Highlight::Positive));
+        });
     }
 }
 

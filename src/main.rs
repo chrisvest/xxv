@@ -25,6 +25,7 @@ use crate::xv_state::XvState;
 
 mod utilities;
 mod panic_hook;
+mod kmp_search;
 mod xv_state;
 mod byte_reader;
 mod hex_tables;
@@ -35,6 +36,7 @@ mod set_width_dialog;
 mod goto_dialog;
 mod open_file_dialog;
 mod switch_file_dialog;
+mod search_dialog;
 mod status_bar;
 mod help_text;
 mod xv_tui;

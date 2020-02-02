@@ -1,5 +1,5 @@
 use cursive::theme::{ColorStyle, ColorType, Effect, PaletteColor, Style};
-use cursive::traits::Boxable;
+use cursive::traits::Resizable;
 use cursive::utils::markup::StyledString;
 use cursive::views::{LinearLayout, PaddedView, TextView};
 

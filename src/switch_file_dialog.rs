@@ -2,7 +2,7 @@ use std::ffi::OsString;
 use std::path::PathBuf;
 
 use cursive::event::Key;
-use cursive::traits::{Boxable, Identifiable};
+use cursive::traits::{Resizable, Nameable};
 use cursive::views::{Dialog, LinearLayout, OnEventView, ScrollView, SelectView};
 use cursive::Cursive;
 

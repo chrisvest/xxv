@@ -115,6 +115,11 @@ impl HexView {
         self.reader.get_length()
     }
     
+    pub fn search(&mut self, bytes: &[u8]) {
+        self.reader.clear_highlights();
+        self.reader.search(bytes);
+    }
+    
     fn toggle_visual(&mut self) -> EventResult {
         self.visual_tables.clear();
         match self.reader.get_visual_mode() {

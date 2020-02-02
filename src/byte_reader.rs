@@ -33,11 +33,15 @@ impl TilingByteReader {
     }
     
     pub fn reopen(&mut self) -> Result<()> {
-        self.file = File::open(self.path.as_path())?;
+        self.file = self.open_file()?;
         self.length = self.file.metadata()?.len();
         Ok(())
     }
-    
+
+    pub fn open_file(&mut self) -> Result<File> {
+        File::open(self.path.as_path())
+    }
+
     pub fn file_name(&self) -> &str {
         &self.display_name
     }
