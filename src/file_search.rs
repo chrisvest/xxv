@@ -4,7 +4,6 @@ use std::fs::File;
 use std::io::{Result, Read, Seek, SeekFrom};
 
 use bstr::Finder;
-use rio;
 
 const BUFFER_SIZE: usize = 1024 * 1024;
 
