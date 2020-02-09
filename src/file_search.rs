@@ -21,6 +21,7 @@ pub fn search<F>(file: File, bytes: &[u8], mut consumer: F)
     sync_io_search(&mut file, &bytes, &mut consumer);
 }
 
+#[cfg(target_os = "linux")]
 fn async_io_search<F>(file: &mut File, bytes: &[u8], consumer: &mut F) -> Result<()>
     where F: FnMut(u64) {
     let file_len = file.metadata()?.len();
