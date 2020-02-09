@@ -6,7 +6,7 @@ use crate::byte_reader::TilingByteReader;
 use crate::hex_tables::*;
 use std::collections::btree_map::BTreeMap;
 use crate::hex_view_printers::TableSet;
-use crate::kmp_search;
+use crate::file_search;
 
 #[derive(Copy, Clone, Debug)]
 pub enum VisualMode {
@@ -256,7 +256,7 @@ impl HexReader {
     pub fn search(&mut self, bytes: &[u8]) {
         let file = self.reader.open_file().unwrap();
         let len = u64::try_from(bytes.len()).unwrap();
-        kmp_search::search(file, bytes, |start| {
+        file_search::search(file, bytes, |start| {
             self.highlight.insert(start, (len, Highlight::Positive));
         });
     }

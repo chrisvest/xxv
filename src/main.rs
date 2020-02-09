@@ -25,7 +25,7 @@ use crate::xv_state::XvState;
 
 mod utilities;
 mod panic_hook;
-mod kmp_search;
+mod file_search;
 mod xv_state;
 mod byte_reader;
 mod hex_tables;
