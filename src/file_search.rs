@@ -1,7 +1,6 @@
-use std::collections::VecDeque;
 use std::convert::TryFrom;
 use std::fs::File;
-use std::io::{Result, Read, Seek, SeekFrom};
+use std::io::*;
 
 use bstr::Finder;
 
@@ -16,7 +15,7 @@ pub fn search<F>(mut file: File, bytes: &[u8], mut consumer: F)
 }
 
 #[cfg(not(target_os = "linux"))]
-pub fn search<F>(file: File, bytes: &[u8], mut consumer: F)
+pub fn search<F>(mut file: File, bytes: &[u8], mut consumer: F)
     where F: FnMut(u64) {
     sync_io_search(&mut file, &bytes, &mut consumer);
 }
@@ -24,6 +23,8 @@ pub fn search<F>(file: File, bytes: &[u8], mut consumer: F)
 #[cfg(target_os = "linux")]
 fn async_io_search<F>(file: &mut File, bytes: &[u8], consumer: &mut F) -> Result<()>
     where F: FnMut(u64) {
+    use std::collections::VecDeque;
+    
     let file_len = file.metadata()?.len();
     if file_len <= u64::try_from(BUFFER_SIZE).unwrap() {
         sync_io_search(file, bytes, consumer);
