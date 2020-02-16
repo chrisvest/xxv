@@ -69,7 +69,7 @@ impl HexView {
         let lines_in_file = self.reader.get_lines_in_file();
         
         let target_pos = if line <= lines_in_file {
-            self.reader.highlight(offset, Highlight::Positive);
+            self.reader.highlight(offset, 1, Highlight::Positive);
             (line_offset, line)
         } else {
             (0, lines_in_file)
