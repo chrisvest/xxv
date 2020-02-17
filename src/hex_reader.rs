@@ -228,7 +228,7 @@ impl HexReader {
             let offset = line_offset + i;
 
             while let Some((&start, &(w,h))) = hl {
-                if start + w < offset {
+                if start + w <= offset {
                     hl = hl_iter.next();
                 } else if start <= offset && offset < start + w {
                     hl = hl_iter.next();
@@ -385,6 +385,22 @@ mod tests {
         //  01      30 31
         //  45      34 35
         assert_eq!(hex, "30 31+\n34- 35-")
+    }
+    
+    #[test]
+    fn highlight_to_left_of_window_must_not_bleed_in() {
+        let mut tmpf = tempfile::NamedTempFile::new().unwrap();
+        tmpf.write(b"0123456789abcdef").unwrap();
+        
+        let mut reader = HexReader::new(TilingByteReader::new(tmpf.path()).unwrap()).unwrap();
+        reader.highlight(0, 2, Highlight::Positive);
+        reader.window_pos = (2,0);
+        reader.window_size = (2,2);
+        reader.line_width = 4;
+        reader.capture().unwrap();
+        let mut hex = String::new();
+        reader.visit_hex(&mut hex);
+        assert_eq!(hex, "32 33\n36 37")
     }
     
     #[test]
