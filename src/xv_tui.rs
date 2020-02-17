@@ -3,9 +3,10 @@ use std::path::PathBuf;
 
 use cursive::Cursive;
 use cursive::event::Key;
-use cursive::traits::{Boxable, Identifiable};
+use cursive::traits::{Resizable, Nameable};
 use cursive::views::{Dialog, LinearLayout, TextView};
 
+use crate::search_dialog::search_dialog;
 use crate::goto_dialog::open_goto_dialog;
 use crate::help_text::show_help;
 use crate::hex_reader::HexReader;
@@ -28,6 +29,8 @@ pub const OBJ_GROUP: &str = "group_width";
 pub const OBJ_GOTO_OFFSET: &str = "goto_offset";
 pub const OBJ_GOTO_MUL1: &str = "goto_mul1";
 pub const OBJ_GOTO_MUL2: &str = "goto_mul2";
+pub const OBJ_FIND_ASCII: &str = "find_ascii";
+pub const OBJ_FIND_HEX: &str = "find_hex";
 
 pub fn run_tui(reader: Option<HexReader>, mut state: XvState) {
     let mut tui = Cursive::default();
@@ -42,6 +45,8 @@ pub fn run_tui(reader: Option<HexReader>, mut state: XvState) {
     tui.add_global_callback('t', change_theme);
     tui.add_global_callback('o', open_file_dialog);
     tui.add_global_callback('s', switch_file_dialog);
+    tui.add_global_callback('f', |v| search_dialog(v, true));
+    tui.add_global_callback('F', |v| search_dialog(v, false));
 
     let hex_view = match reader {
         Some(reader) => HexView::new(reader),

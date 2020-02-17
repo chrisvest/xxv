@@ -3,7 +3,7 @@ use crate::xv_state::XvState;
 use crate::xv_tui::{ShowError, OBJ_CURRENT_DIR, OBJ_DIR_SELECTOR, OBJ_FILE_SELECTOR, OBJ_HEX_VIEW};
 use cursive::event::Key;
 use cursive::theme::Effect;
-use cursive::traits::{Boxable, Identifiable};
+use cursive::traits::{Resizable, Nameable};
 use cursive::views::{
     Dialog, DummyView, LinearLayout, OnEventView, ScrollView, SelectView, TextView,
 };

@@ -4,8 +4,9 @@ use std::path::PathBuf;
 
 use crate::byte_reader::TilingByteReader;
 use crate::hex_tables::*;
-use std::collections::btree_map::BTreeMap;
+use std::collections::btree_map::{BTreeMap, Range};
 use crate::hex_view_printers::TableSet;
+use crate::file_search;
 
 #[derive(Copy, Clone, Debug)]
 pub enum VisualMode {
@@ -14,7 +15,7 @@ pub enum VisualMode {
     Off,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum Highlight {
     Neutral,
     Positive,
@@ -38,6 +39,42 @@ pub trait HexVisitor {
 }
 
 #[derive(Debug)]
+struct Highlights {
+    highlight: BTreeMap<u64,(u64,Highlight)>,
+    highlight_width: u64,
+}
+
+impl Highlights {
+    fn new() -> Highlights {
+        Highlights {
+            highlight: BTreeMap::new(),
+            highlight_width: 0,
+        }
+    }
+    
+    fn clear(&mut self) {
+        self.highlight.clear();
+        self.highlight_width = 0;
+    }
+    
+    fn insert(&mut self, offset: u64, width: u64, highlight: Highlight) {
+        self.highlight.insert(offset, (width, highlight));
+        if self.highlight_width < width {
+            self.highlight_width = width;
+        }
+    }
+    
+    fn iter_from(&self, offset: u64) -> Range<u64, (u64, Highlight)> {
+        let start = if offset > self.highlight_width {
+            offset - self.highlight_width
+        } else {
+            0
+        };
+        self.highlight.range(start..)
+    }
+}
+
+#[derive(Debug)]
 pub struct HexReader {
     reader: TilingByteReader,
     pub line_width: u64,
@@ -46,7 +83,7 @@ pub struct HexReader {
     pub window_size: (u16,u16),
     capture: Vec<u8>,
     before_image: Vec<u8>,
-    highlight: BTreeMap<u64,Highlight>,
+    highlight: Highlights,
     pub vis_mode: VisualMode,
 }
 
@@ -60,7 +97,7 @@ impl HexReader {
             window_size: (16,32),
             capture: Vec::new(),
             before_image: Vec::new(),
-            highlight: BTreeMap::new(),
+            highlight: Highlights::new(),
             vis_mode: VisualMode::Unicode
         })
     }
@@ -93,8 +130,6 @@ impl HexReader {
         let (x, y) = self.window_pos;
         let (w, h) = self.window_size;
         self.capture.clear();
-        // xxx Possible optimisation, since 'capture' is a Vec of u8 where drop is a no-op.
-//        unsafe { self.capture.set_len(0) };
         self.reader.get_window((x, y, w, h), self.line_width, &mut self.capture)?;
 
         if !self.before_image.is_empty() {
@@ -113,14 +148,20 @@ impl HexReader {
         let mut before_itr = self.before_image.iter();
         let mut after_itr = self.capture.iter();
         let mut i = 0;
+        let mut begin_offset: Option<u64> = None;
         while let Some(a) = after_itr.next() {
             let offset = line_offset + i;
             
             if let Some(b) = before_itr.next() {
-                if a != b {
-                    self.highlight.insert(offset, Highlight::Negative);
+                if a != b && begin_offset.is_none() {
+                    begin_offset = Some(offset);
+                } else if let Some(begin) = begin_offset {
+                    self.highlight.insert(begin, offset - begin, Highlight::Negative);
                 }
             } else {
+                if let Some(begin) = begin_offset {
+                    self.highlight.insert(begin, offset - begin, Highlight::Negative);
+                }
                 break;
             }
             
@@ -141,8 +182,8 @@ impl HexReader {
         self.highlight.clear();
     }
     
-    pub fn highlight(&mut self, offset: u64, highlight: Highlight) {
-        self.highlight.insert(offset, highlight);
+    pub fn highlight(&mut self, offset: u64, width: u64, highlight: Highlight) {
+        self.highlight.insert(offset, width, highlight);
     }
     
     pub fn visit_row_offsets(&self, visitor: &mut dyn OffsetsVisitor) {
@@ -177,19 +218,22 @@ impl HexReader {
         let group = u64::from(self.group);
 
         let mut line_offset = line_width * self.window_pos.1 + self.window_pos.0;
-        let mut hl_iter = self.highlight.iter();
+        let mut hl_iter = self.highlight.iter_from(line_offset);
         let mut hl = hl_iter.next();
 
         let mut i = 0;
+        let mut highlight = Highlight::Neutral;
+        let mut hl_end = 0;
         for b in capture {
             let offset = line_offset + i;
-            let mut highlight = Highlight::Neutral;
-            while let Some((&target, h)) = hl {
-                if target < offset {
+
+            while let Some((&start, &(w,h))) = hl {
+                if start + w <= offset {
                     hl = hl_iter.next();
-                } else if target == offset {
+                } else if start <= offset && offset < start + w {
                     hl = hl_iter.next();
-                    highlight = h.to_owned();
+                    hl_end = w + i - (offset - start);
+                    highlight = h;
                     break;
                 } else {
                     break;
@@ -200,10 +244,14 @@ impl HexReader {
             visitor.byte(r, highlight);
 
             i += 1;
+            if i == hl_end {
+                highlight = Highlight::Neutral;
+            }
             if i == line_cap {
                 visitor.next_line();
                 i = 0;
                 line_offset += line_width;
+                highlight = Highlight::Neutral;
             } else if (self.window_pos.0 + i) % group == 0 {
                 visitor.group();
             }
@@ -239,6 +287,14 @@ impl HexReader {
     
     pub fn get_visual_mode(&self) -> &VisualMode {
         &self.vis_mode
+    }
+    
+    pub fn search(&mut self, bytes: &[u8]) {
+        let file = self.reader.open_file().unwrap();
+        let len = u64::try_from(bytes.len()).unwrap();
+        file_search::search(file, bytes, |start| {
+            self.highlight(start, len, Highlight::Positive);
+        });
     }
 }
 
@@ -315,10 +371,10 @@ mod tests {
         tmpf.write(b"0123456789abcdef").unwrap();
         
         let mut reader = HexReader::new(TilingByteReader::new(tmpf.path()).unwrap()).unwrap();
-        reader.highlight(1, Highlight::Positive);
-        reader.highlight(3, Highlight::Positive);
-        reader.highlight(4, Highlight::Negative);
-        reader.highlight(5, Highlight::Negative);
+        reader.highlight(1, 1, Highlight::Positive);
+        reader.highlight(3, 1, Highlight::Positive);
+        reader.highlight(4, 1, Highlight::Negative);
+        reader.highlight(5, 1, Highlight::Negative);
         reader.window_pos = (0,0);
         reader.window_size = (2,2);
         reader.line_width = 4;
@@ -329,6 +385,22 @@ mod tests {
         //  01      30 31
         //  45      34 35
         assert_eq!(hex, "30 31+\n34- 35-")
+    }
+    
+    #[test]
+    fn highlight_to_left_of_window_must_not_bleed_in() {
+        let mut tmpf = tempfile::NamedTempFile::new().unwrap();
+        tmpf.write(b"0123456789abcdef").unwrap();
+        
+        let mut reader = HexReader::new(TilingByteReader::new(tmpf.path()).unwrap()).unwrap();
+        reader.highlight(0, 2, Highlight::Positive);
+        reader.window_pos = (2,0);
+        reader.window_size = (2,2);
+        reader.line_width = 4;
+        reader.capture().unwrap();
+        let mut hex = String::new();
+        reader.visit_hex(&mut hex);
+        assert_eq!(hex, "32 33\n36 37")
     }
     
     #[test]

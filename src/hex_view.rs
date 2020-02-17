@@ -69,7 +69,7 @@ impl HexView {
         let lines_in_file = self.reader.get_lines_in_file();
         
         let target_pos = if line <= lines_in_file {
-            self.reader.highlight(offset, Highlight::Positive);
+            self.reader.highlight(offset, 1, Highlight::Positive);
             (line_offset, line)
         } else {
             (0, lines_in_file)
@@ -113,6 +113,11 @@ impl HexView {
     
     pub fn get_length(&self) -> u64 {
         self.reader.get_length()
+    }
+    
+    pub fn search(&mut self, bytes: &[u8]) {
+        self.reader.clear_highlights();
+        self.reader.search(bytes);
     }
     
     fn toggle_visual(&mut self) -> EventResult {
