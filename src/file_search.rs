@@ -35,8 +35,7 @@ fn async_io_search<F>(file: &mut File, bytes: &[u8], consumer: &mut F) -> Result
     let needle_size = bytes.len();
     let queue_depth = 32;
     let mut read_pos = 0;
-    let mut config = rio::Config::default();
-    config.io_poll = true; // Use polled IO to make the kernel more proactive.
+    let config = rio::Config::default();
     let io = config.start()?;
     let buffers = vec![vec![0; BUFFER_SIZE]; queue_depth];
     
