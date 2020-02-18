@@ -1,5 +1,5 @@
 [package]
-name = "xv"
+name = "xxv"
 version = "0.1.2"
 authors = ["Chris Vest <mr.chrisvest@gmail.com>"]
 edition = "2018"
@@ -7,12 +7,12 @@ description = "A hex viewer for the terminal, with a visual text user interface.
 keywords = ["hex", "binary", "ncurses"]
 categories = ["command-line-utilities", "development-tools"]
 license = "GPL-3.0"
-homepage = "https://chrisvest.github.io/xv/"
-repository = "https://github.com/chrisvest/xv"
+homepage = "https://chrisvest.github.io/xxv/"
+repository = "https://github.com/chrisvest/xxv"
 readme = "Readme.adoc"
 
 [badges.travis-ci]
-repository = "chrisvest/xv"
+repository = "chrisvest/xxv"
 
 [profile.release]
 overflow-checks = true

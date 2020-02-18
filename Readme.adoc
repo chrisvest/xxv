@@ -1,18 +1,18 @@
-= The XV Hex Viewer
+= The XXV Hex Viewer
 
-image:https://travis-ci.org/chrisvest/xv.svg?branch=master[Build status, link=https://travis-ci.org/chrisvest/xv/]
-image:https://img.shields.io/badge/source-github-success.svg[Source code, link=https://github.com/chrisvest/xv/]
-image:https://img.shields.io/gitter/room/chrisvest/xv.svg[Gitter chat, link=https://gitter.im/chrisvest/xv]
-image:https://img.shields.io/github/license/chrisvest/xv.svg[License]
+image:https://travis-ci.org/chrisvest/xxv.svg?branch=master[Build status, link=https://travis-ci.org/chrisvest/xxv/]
+image:https://img.shields.io/badge/source-github-success.svg[Source code, link=https://github.com/chrisvest/xxv/]
+image:https://img.shields.io/gitter/room/chrisvest/xxv.svg[Gitter chat, link=https://gitter.im/chrisvest/xxv]
+image:https://img.shields.io/github/license/chrisvest/xxv.svg[License]
 
-XV is a terminal hex viewer with a text user interface, written in 100% safe Rust.
+XXV is a terminal hex viewer with a text user interface, written in 100% safe Rust.
 Licensed under the GPL-3.0 software license.
 
-Get it from https://crates.io/crates/xv[crates.io] by running `cargo install xv` in your terminal.
-Make sure you have a proper https://github.com/chrisvest/xv/wiki[development environment] first, though.
-Windows is supported with the Crossterm backend: `cargo install xv --no-default-features --features crossterm`.
+Get it from https://crates.io/crates/xxv[crates.io] by running `cargo install xxv` in your terminal.
+Make sure you have a proper https://github.com/chrisvest/xxv/wiki[development environment] first, though.
+Windows is supported with the Crossterm backend: `cargo install xxv --no-default-features --features crossterm`.
 
-image::docs/screenshot.png[Screenshot showing the XV hex viewer in a terminal]
+image::docs/screenshot.png[Screenshot showing the XXV hex viewer in a terminal]
 
 :leveloffset: +1
 include::src/help_text.md[]
