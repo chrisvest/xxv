@@ -1,4 +1,4 @@
-Last time XV was running, it ran into a problem and crashed.
+Last time XXV was running, it ran into a problem and crashed.
 To help us diagnose the problem, you can send us a crash report.
 
 A report file has been generated:

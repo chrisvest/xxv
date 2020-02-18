@@ -7,7 +7,7 @@ use cursive::Cursive;
 
 use crate::hex_view::HexView;
 use crate::utilities::{get_content, parse_number};
-use crate::xv_tui::{OBJ_HEX_VIEW, OBJ_LINE_WIDTH, OBJ_GROUP};
+use crate::xxv_tui::{OBJ_HEX_VIEW, OBJ_LINE_WIDTH, OBJ_GROUP};
 
 pub fn open_set_width_dialog(s: &mut Cursive) {
     let (current_width, current_group) = get_current_width_and_group(s);

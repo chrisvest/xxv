@@ -21,12 +21,12 @@ extern crate serde_derive;
 use std::process::exit;
 
 use crate::utilities::{exit_reader_open_error, PKG_DESCRIPTION, PKG_NAME, PKG_VERSION};
-use crate::xv_state::XvState;
+use crate::xxv_state::XxvState;
 
 mod utilities;
 mod panic_hook;
 mod file_search;
-mod xv_state;
+mod xxv_state;
 mod byte_reader;
 mod hex_tables;
 mod hex_reader;
@@ -39,7 +39,7 @@ mod switch_file_dialog;
 mod search_dialog;
 mod status_bar;
 mod help_text;
-mod xv_tui;
+mod xxv_tui;
 
 fn main() {
     panic_hook::install();
@@ -63,7 +63,7 @@ fn main() {
         }
     }
 
-    let mut state = XvState::load();
+    let mut state = XxvState::load();
     let recent_files = state.recent_files();
     
     match file_arg {
@@ -74,11 +74,11 @@ fn main() {
             exit(64); // EX_USAGE from sysexits.h
         },
         None => {
-            xv_tui::run_tui(None, state)
+            xxv_tui::run_tui(None, state)
         },
         Some(file_name) => {
             match state.open_reader(&file_name) {
-                Ok(h_reader) => xv_tui::run_tui(Some(h_reader), state),
+                Ok(h_reader) => xxv_tui::run_tui(Some(h_reader), state),
                 Err(e) => exit_reader_open_error(e, file_name)
             }
         }

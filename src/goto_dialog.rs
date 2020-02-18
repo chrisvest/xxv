@@ -5,7 +5,7 @@ use cursive::Cursive;
 
 use crate::hex_view::HexView;
 use crate::utilities::{get_content, parse_number_or_zero};
-use crate::xv_tui::{OBJ_HEX_VIEW, OBJ_GOTO_OFFSET, OBJ_GOTO_MUL1, OBJ_GOTO_MUL2};
+use crate::xxv_tui::{OBJ_HEX_VIEW, OBJ_GOTO_OFFSET, OBJ_GOTO_MUL1, OBJ_GOTO_MUL2};
 
 pub fn open_goto_dialog(s: &mut Cursive) {
     let (line_width, length) = s

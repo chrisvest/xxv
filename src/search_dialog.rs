@@ -1,7 +1,7 @@
 use cursive::{Cursive, With};
 use cursive::views::{LinearLayout, TextView, EditView, OnEventView, Dialog};
 use cursive::traits::{Nameable, Resizable};
-use crate::xv_tui::{OBJ_FIND_ASCII, OBJ_FIND_HEX, OBJ_HEX_VIEW};
+use crate::xxv_tui::{OBJ_FIND_ASCII, OBJ_FIND_HEX, OBJ_HEX_VIEW};
 use crate::hex_tables::{BYTE_RENDER, UNICODE_TEXT_TABLE};
 use cursive::event::Key;
 use crate::hex_view::HexView;

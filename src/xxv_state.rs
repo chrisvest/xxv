@@ -72,15 +72,15 @@ impl From<String> for VisualMode {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct XvState {
+pub struct XxvState {
     theme: bool,
     current_dir: PathBuf,
     max_recent_files: usize,
     recent_files: Vec<ReaderState>,
 }
 
-impl XvState {
-    pub fn load() -> XvState {
+impl XxvState {
+    pub fn load() -> XxvState {
         if let Some(project_dirs) = utilities::project_dirs() {
             let mut state_path = project_dirs.config_dir().to_owned();
             state_path.push("xv.state");
@@ -102,7 +102,7 @@ impl XvState {
             }
         });
         
-        XvState {
+        XxvState {
             theme: true,
             current_dir,
             max_recent_files: 50,

@@ -7,13 +7,13 @@ use cursive::views::{Dialog, LinearLayout, OnEventView, ScrollView, SelectView};
 use cursive::Cursive;
 
 use crate::hex_view::HexView;
-use crate::xv_state::XvState;
-use crate::xv_tui::{ShowError, OBJ_SWITCHER, OBJ_HEX_VIEW};
+use crate::xxv_state::XxvState;
+use crate::xxv_tui::{ShowError, OBJ_SWITCHER, OBJ_HEX_VIEW};
 
 pub fn switch_file_dialog(s: &mut Cursive) {
     let mut file_selector: SelectView<OsString> = SelectView::new().autojump();
 
-    s.with_user_data(|state: &mut XvState| {
+    s.with_user_data(|state: &mut XxvState| {
         let recent_files = state.recent_files();
         for recent_file in recent_files {
             let path = recent_file.path();
@@ -52,7 +52,7 @@ fn do_switch_file(s: &mut Cursive) {
         let current_file = s
             .call_on_name(OBJ_HEX_VIEW, |view: &mut HexView| view.get_reader_state())
             .unwrap();
-        if let Some(reader_result) = s.with_user_data(|state: &mut XvState| {
+        if let Some(reader_result) = s.with_user_data(|state: &mut XxvState| {
             let path = PathBuf::from(file_name);
             let result = state.open_reader(path);
             if result.is_ok() {
@@ -79,7 +79,7 @@ fn remove_selected_file(s: &mut Cursive) {
         .unwrap();
     if let Some(id) = file_selector.selected_id() {
         file_selector.remove_item(id)(s);
-        s.with_user_data(|state: &mut XvState| {
+        s.with_user_data(|state: &mut XxvState| {
             state.remove_recent_file(id);
         });
     }

@@ -17,7 +17,7 @@ use crate::set_width_dialog::open_set_width_dialog;
 use crate::status_bar::new_status_bar;
 use crate::switch_file_dialog::switch_file_dialog;
 use crate::utilities::{exit_reader_open_error, PKG_REPOSITORY};
-use crate::xv_state::XvState;
+use crate::xxv_state::XxvState;
 
 pub const OBJ_HEX_VIEW: &str = "hex_view";
 pub const OBJ_SWITCHER: &str = "file_switcher";
@@ -32,7 +32,7 @@ pub const OBJ_GOTO_MUL2: &str = "goto_mul2";
 pub const OBJ_FIND_ASCII: &str = "find_ascii";
 pub const OBJ_FIND_HEX: &str = "find_hex";
 
-pub fn run_tui(reader: Option<HexReader>, mut state: XvState) {
+pub fn run_tui(reader: Option<HexReader>, mut state: XxvState) {
     let mut tui = Cursive::default();
     tui.set_theme(state.current_theme());
 
@@ -83,7 +83,7 @@ fn quit(s: &mut Cursive) {
     let reader_state = s
         .call_on_name(OBJ_HEX_VIEW, |view: &mut HexView| view.get_reader_state())
         .unwrap();
-    s.with_user_data(|state: &mut XvState| {
+    s.with_user_data(|state: &mut XxvState| {
         state.close_reader(reader_state);
         state.store();
     });
@@ -91,7 +91,7 @@ fn quit(s: &mut Cursive) {
 }
 
 fn change_theme(s: &mut Cursive) {
-    let new_theme = s.with_user_data(|state: &mut XvState| {
+    let new_theme = s.with_user_data(|state: &mut XxvState| {
         state.toggle_theme();
         state.current_theme()
     });

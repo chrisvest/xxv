@@ -10,7 +10,7 @@ use cursive::Vec2;
 use unicode_width::UnicodeWidthStr;
 
 use crate::hex_reader::{HexReader, VisualMode, Highlight};
-use crate::xv_state::ReaderState;
+use crate::xxv_state::ReaderState;
 use crate::hex_view_printers::{OffsetPrinter, HexPrinter, VisualPrinter, TableSet};
 
 pub struct HexView {

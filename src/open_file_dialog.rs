@@ -1,6 +1,6 @@
 use crate::hex_view::HexView;
-use crate::xv_state::XvState;
-use crate::xv_tui::{ShowError, OBJ_CURRENT_DIR, OBJ_DIR_SELECTOR, OBJ_FILE_SELECTOR, OBJ_HEX_VIEW};
+use crate::xxv_state::XxvState;
+use crate::xxv_tui::{ShowError, OBJ_CURRENT_DIR, OBJ_DIR_SELECTOR, OBJ_FILE_SELECTOR, OBJ_HEX_VIEW};
 use cursive::event::Key;
 use cursive::theme::Effect;
 use cursive::traits::{Resizable, Nameable};
@@ -58,10 +58,10 @@ fn select_directory(s: &mut Cursive, dir: &OsStr) {
         .find_name::<SelectView<OsString>>(OBJ_FILE_SELECTOR)
         .unwrap();
     let saved_current_dir = s
-        .with_user_data(|state: &mut XvState| state.current_directory().to_path_buf())
+        .with_user_data(|state: &mut XxvState| state.current_directory().to_path_buf())
         .unwrap();
 
-    let result = s.with_user_data(|state: &mut XvState| {
+    let result = s.with_user_data(|state: &mut XxvState| {
         state.change_directory(dir);
         fill_selectors(
             &mut current_dir,
@@ -73,7 +73,7 @@ fn select_directory(s: &mut Cursive, dir: &OsStr) {
 
     if let Some(Err(error)) = result {
         s.show_error(error);
-        if let Some(Err(error)) = s.with_user_data(|state: &mut XvState| {
+        if let Some(Err(error)) = s.with_user_data(|state: &mut XxvState| {
             state.set_directory(saved_current_dir);
             fill_selectors(
                 &mut current_dir,
@@ -83,7 +83,7 @@ fn select_directory(s: &mut Cursive, dir: &OsStr) {
             )
         }) {
             s.show_error(error);
-            if let Some(Err(error)) = s.with_user_data(|state: &mut XvState| {
+            if let Some(Err(error)) = s.with_user_data(|state: &mut XxvState| {
                 state.reset_current_directory()?;
                 fill_selectors(
                     &mut current_dir,
@@ -102,7 +102,7 @@ fn fill_selectors(
     current_dir: &mut TextView,
     dir_selector: &mut SelectView<OsString>,
     file_selector: &mut SelectView<OsString>,
-    state: &mut XvState,
+    state: &mut XxvState,
 ) -> Result<()> {
     dir_selector.clear();
     file_selector.clear();
@@ -139,7 +139,7 @@ fn do_open_file(s: &mut Cursive) {
         let current_file = s
             .call_on_name(OBJ_HEX_VIEW, |view: &mut HexView| view.get_reader_state())
             .unwrap();
-        if let Some(reader_result) = s.with_user_data(|state: &mut XvState| {
+        if let Some(reader_result) = s.with_user_data(|state: &mut XxvState| {
             let path = state.resolve_path(file_name);
             state.close_reader(current_file);
             state.open_reader(path)

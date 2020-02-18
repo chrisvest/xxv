@@ -1,7 +1,7 @@
-Using XV
-========
+Using XXV
+=========
 
-XV is a hex viewer. There is no editing capability.
+XXV is a hex viewer. There is no editing capability.
 The file is displayed as a grid of bytes. The width
 of the grid is 16 bytes by default, and can be
 changed by pressing `w`.
@@ -42,7 +42,7 @@ files. The last file you had open will be at the
 top of the list.
 
 The list of recently opened files is remembered
-across restarts of XV.
+across restarts of XXV.
 
 Press Del in the "Switch file" dialog to remove a
 file from the list. This will also forget the
