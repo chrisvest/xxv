@@ -10,6 +10,11 @@ license = "GPL-3.0"
 homepage = "https://chrisvest.github.io/xxv/"
 repository = "https://github.com/chrisvest/xxv"
 readme = "Readme.adoc"
+exclude = [
+    "docs/*",
+    ".gitignore",
+    ".travis.yml",
+]
 
 [badges.travis-ci]
 repository = "chrisvest/xxv"
