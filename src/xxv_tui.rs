@@ -45,8 +45,7 @@ pub fn run_tui(reader: Option<HexReader>, mut state: XxvState) {
     tui.add_global_callback('t', change_theme);
     tui.add_global_callback('o', open_file_dialog);
     tui.add_global_callback('s', switch_file_dialog);
-    tui.add_global_callback('f', |v| search_dialog(v, true));
-    tui.add_global_callback('F', |v| search_dialog(v, false));
+    tui.add_global_callback('/', search_dialog);
 
     let hex_view = match reader {
         Some(reader) => HexView::new(reader),

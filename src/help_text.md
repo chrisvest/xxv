@@ -59,14 +59,16 @@ column at all.
 Press `t` to switch between light and dark theme.
 The theme selection is remembered across restarts.
 
+Press `/` to open the search dialog.
+
+Press `r` to reload the data in the viewport.
+Press `R` to re-open the file, and then reload the
+data.
+
 Press the Esc key to close any dialog.
 
 Press `q` to quit the program. This works even when
 a dialog is open. Pressing Esc also quits if no
 dialog is open.
-
-Press `r` to reload the data in the viewport.
-Press `R` to re-open the file, and then reload the
-data.
 
 Press `?` or F1 to show this help text.

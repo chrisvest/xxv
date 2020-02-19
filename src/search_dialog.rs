@@ -1,4 +1,4 @@
-use cursive::{Cursive, With};
+use cursive::Cursive;
 use cursive::views::{LinearLayout, TextView, EditView, OnEventView, Dialog};
 use cursive::traits::{Nameable, Resizable};
 use crate::xxv_tui::{OBJ_FIND_ASCII, OBJ_FIND_HEX, OBJ_HEX_VIEW};
@@ -6,12 +6,11 @@ use crate::hex_tables::{BYTE_RENDER, UNICODE_TEXT_TABLE};
 use cursive::event::Key;
 use crate::hex_view::HexView;
 
-pub fn search_dialog(s: &mut Cursive, ascii: bool) {
+pub fn search_dialog(s: &mut Cursive) {
     let ascii_field = EditView::new()
         .content("")
         .on_edit(edit_ascii)
         .on_submit(on_find)
-        .with_if(!ascii, |f|f.disable())
         .with_name(OBJ_FIND_ASCII)
         .min_width(48);
     
@@ -19,7 +18,6 @@ pub fn search_dialog(s: &mut Cursive, ascii: bool) {
         .content("")
         .on_edit(edit_hex)
         .on_submit(on_find)
-        .with_if(ascii, |f|f.disable())
         .with_name(OBJ_FIND_HEX)
         .min_width(48);
     
@@ -53,10 +51,11 @@ fn edit_ascii(s: &mut Cursive, text: &str, _cursor: usize) {
             hex_text.push_str(BYTE_RENDER[usize::from(*b)]);
         }
         v.set_content(hex_text);
+        update_companion_accessibility(text, v)
     });
 }
 
-fn edit_hex(s: &mut Cursive, _text: &str, cursor: usize) {
+fn edit_hex(s: &mut Cursive, text: &str, cursor: usize) {
     let mut ascii = String::new();
     s.call_on_name(OBJ_FIND_HEX, |v: &mut EditView| {
         let mut hex_text = v.get_content().to_string();
@@ -71,7 +70,8 @@ fn edit_hex(s: &mut Cursive, _text: &str, cursor: usize) {
         };
     });
     s.call_on_name(OBJ_FIND_ASCII, |v: &mut EditView| {
-        v.set_content(ascii)
+        v.set_content(ascii);
+        update_companion_accessibility(text, v)
     });
 }
 
@@ -101,6 +101,14 @@ fn hex_to_bytes(hex_text: &mut String, bytes: &mut Vec<u8>) -> bool {
         }
     }
     return modified;
+}
+
+fn update_companion_accessibility(text: &str, v: &mut EditView) {
+    if text.len() > 0 && v.is_enabled() {
+        v.disable();
+    } else if text.len() == 0 && !v.is_enabled() {
+        v.enable();
+    }
 }
 
 fn on_find(s: &mut Cursive, _text: &str) {
