@@ -20,7 +20,7 @@ pub fn open_file_dialog(s: &mut Cursive) {
         .child(
             TextView::new("")
                 .center()
-                .effect(Effect::Bold)
+                .style(Effect::Bold)
                 .with_name(OBJ_CURRENT_DIR),
         )
         .child(DummyView)

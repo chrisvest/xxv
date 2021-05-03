@@ -7,7 +7,8 @@ use std::panic::PanicInfo;
 use std::path::PathBuf;
 
 use backtrace::Backtrace;
-use time::now;
+use time::OffsetDateTime;
+use time::Format::Rfc3339;
 
 use crate::utilities::{PKG_NAME, PKG_VERSION};
 use crate::utilities;
@@ -27,7 +28,7 @@ pub fn archive_last_crash() -> Option<PathBuf> {
         let mut path = dirs.data_local_dir().to_path_buf();
         path.push(CRASH_LOG_FILE_NAME);
         if path.exists() {
-            let archive_name = format!("{}.{}", CRASH_LOG_FILE_NAME, now().rfc3339());
+            let archive_name = format!("{}.{}", CRASH_LOG_FILE_NAME, OffsetDateTime::now_utc().lazy_format(Rfc3339));
             let log_path = path.clone();
             path.pop();
             path.push(archive_name);
@@ -43,7 +44,7 @@ fn report_crash(info: &PanicInfo) -> std::fmt::Result {
 
     writeln!(msg)?;
     writeln!(msg)?;
-    writeln!(msg, "Panic in {} {}, {}.", PKG_NAME, PKG_VERSION, now().rfc3339())?;
+    writeln!(msg, "Panic in {} {}, {}.", PKG_NAME, PKG_VERSION, OffsetDateTime::now_utc().lazy_format(Rfc3339))?;
     writeln!(msg, "System: {} ({}), {}.", OS, FAMILY, ARCH)?;
 
     if let Some(payload) = info.payload().downcast_ref::<&str>() {

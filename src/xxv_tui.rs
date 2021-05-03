@@ -2,6 +2,7 @@ use std::io::Error;
 use std::path::PathBuf;
 
 use cursive::Cursive;
+use cursive::CursiveExt;
 use cursive::event::Key;
 use cursive::traits::{Resizable, Nameable};
 use cursive::views::{Dialog, LinearLayout, TextView};
