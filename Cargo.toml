@@ -2,7 +2,7 @@
 name = "xxv"
 version = "0.1.3"
 authors = ["Chris Vest <mr.chrisvest@gmail.com>"]
-edition = "2018"
+edition = "2021"
 description = "A hex viewer for the terminal, with a visual text user interface."
 keywords = ["hex", "binary", "ncurses"]
 categories = ["command-line-utilities", "development-tools"]
