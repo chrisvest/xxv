@@ -18,21 +18,25 @@ where
 
 #[cfg(not(target_os = "linux"))]
 pub fn search<F>(mut file: File, bytes: &[u8], mut consumer: F)
-    where F: FnMut(u64) {
+where
+    F: FnMut(u64),
+{
     sync_io_search(&mut file, &bytes, &mut consumer);
 }
 
 #[cfg(target_os = "linux")]
 fn async_io_search<F>(file: &mut File, bytes: &[u8], consumer: &mut F) -> Result<()>
-    where F: FnMut(u64) {
+where
+    F: FnMut(u64),
+{
     use std::collections::VecDeque;
-    
+
     let file_len = file.metadata()?.len();
     if file_len <= u64::try_from(BUFFER_SIZE).unwrap() {
         sync_io_search(file, bytes, consumer);
         return Ok(());
     }
-    
+
     let finder = Finder::new(bytes);
     let needle_size = bytes.len();
     let queue_depth = 32;
@@ -40,7 +44,7 @@ fn async_io_search<F>(file: &mut File, bytes: &[u8], consumer: &mut F) -> Result
     let config = rio::Config::default();
     let io = config.start()?;
     let buffers = vec![vec![0; BUFFER_SIZE]; queue_depth];
-    
+
     let mut queue = VecDeque::with_capacity(queue_depth);
     for buf in &buffers {
         let cqe = io.read_at(file, buf, read_pos);
@@ -61,18 +65,20 @@ fn async_io_search<F>(file: &mut File, bytes: &[u8], consumer: &mut F) -> Result
             read_pos += u64::try_from(BUFFER_SIZE - needle_size + 1).unwrap();
         }
     }
-    
+
     Ok(())
 }
 
 fn sync_io_search<F>(file: &mut File, bytes: &[u8], consumer: &mut F)
-    where F: FnMut(u64) {
+where
+    F: FnMut(u64),
+{
     let finder = Finder::new(bytes);
     let needle_size = bytes.len();
     let mut buf = vec![0; BUFFER_SIZE];
     let mut num_bytes = file.read(&mut buf).unwrap();
     let mut pos = 0;
-    
+
     while num_bytes > needle_size {
         let mut offset = 0;
         while let Some(p) = finder.find(&buf[offset..num_bytes]) {
@@ -101,7 +107,7 @@ mod tests {
         search(file, b"aba", |hit| output.push(hit));
         assert_eq!(output, vec![0, 2]);
     }
-    
+
     #[test]
     fn sync_io_search_in_big_file() {
         let mut file = tempfile::tempfile().unwrap();
@@ -112,7 +118,7 @@ mod tests {
 
         assert_eq!(counter, 3);
     }
-    
+
     #[cfg(target_os = "linux")]
     #[test]
     fn async_io_search_in_big_file() {
@@ -130,7 +136,8 @@ mod tests {
     fn prepare_big_file(file: &mut File) {
         let file_len = u64::try_from(BUFFER_SIZE * 2 + (BUFFER_SIZE >> 1)).unwrap();
         file.set_len(file_len).unwrap();
-        file.seek(SeekFrom::Start(u64::try_from(BUFFER_SIZE - 3).unwrap())).unwrap();
+        file.seek(SeekFrom::Start(u64::try_from(BUFFER_SIZE - 3).unwrap()))
+            .unwrap();
         file.write(b"Pokemon PokPokemon").unwrap();
         file.seek(SeekFrom::Start(file_len - 7)).unwrap();
         file.write(b"Pokemon").unwrap();

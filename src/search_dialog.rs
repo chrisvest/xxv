@@ -1,10 +1,10 @@
-use cursive::Cursive;
-use cursive::views::{LinearLayout, TextView, EditView, OnEventView, Dialog};
-use cursive::traits::{Nameable, Resizable};
-use crate::xxv_tui::{OBJ_FIND_ASCII, OBJ_FIND_HEX, OBJ_HEX_VIEW};
 use crate::hex_tables::{BYTE_RENDER, UNICODE_TEXT_TABLE};
-use cursive::event::Key;
 use crate::hex_view::HexView;
+use crate::xxv_tui::{OBJ_FIND_ASCII, OBJ_FIND_HEX, OBJ_HEX_VIEW};
+use cursive::event::Key;
+use cursive::traits::{Nameable, Resizable};
+use cursive::views::{Dialog, EditView, LinearLayout, OnEventView, TextView};
+use cursive::Cursive;
 
 pub fn search_dialog(s: &mut Cursive) {
     let ascii_field = EditView::new()
@@ -13,33 +13,37 @@ pub fn search_dialog(s: &mut Cursive) {
         .on_submit(on_find)
         .with_name(OBJ_FIND_ASCII)
         .min_width(48);
-    
+
     let hex_field = EditView::new()
         .content("")
         .on_edit(edit_hex)
         .on_submit(on_find)
         .with_name(OBJ_FIND_HEX)
         .min_width(48);
-    
+
     let layout = LinearLayout::vertical()
-        .child(LinearLayout::horizontal()
-            .child(TextView::new("ASCII: "))
-            .child(ascii_field))
-        .child(LinearLayout::horizontal()
-            .child(TextView::new("HEX:   "))
-            .child(hex_field));
-    
+        .child(
+            LinearLayout::horizontal()
+                .child(TextView::new("ASCII: "))
+                .child(ascii_field),
+        )
+        .child(
+            LinearLayout::horizontal()
+                .child(TextView::new("HEX:   "))
+                .child(hex_field),
+        );
+
     let dialog = Dialog::around(layout)
         .dismiss_button("Cancel")
         .button("Search", do_find)
         .title("Search");
-    
+
     let esc_view = OnEventView::new(dialog)
         .on_event(Key::Esc, |s| {
             s.pop_layer();
         })
         .on_event(Key::Enter, do_find);
-    
+
     s.add_layer(esc_view);
 }
 
@@ -80,7 +84,7 @@ fn hex_to_bytes(hex_text: &mut String, bytes: &mut Vec<u8>) -> bool {
     let mut i = 0;
     while i < hex_text.len() {
         let byte = if hex_text.len() > i + 1 {
-            &hex_text[i..=i+1]
+            &hex_text[i..=i + 1]
         } else {
             &hex_text[i..=i]
         };

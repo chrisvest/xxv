@@ -2,13 +2,13 @@ use std::ffi::OsString;
 use std::path::PathBuf;
 
 use cursive::event::Key;
-use cursive::traits::{Resizable, Nameable};
+use cursive::traits::{Nameable, Resizable};
 use cursive::views::{Dialog, LinearLayout, OnEventView, ScrollView, SelectView};
 use cursive::Cursive;
 
 use crate::hex_view::HexView;
 use crate::xxv_state::XxvState;
-use crate::xxv_tui::{ShowError, OBJ_SWITCHER, OBJ_HEX_VIEW};
+use crate::xxv_tui::{ShowError, OBJ_HEX_VIEW, OBJ_SWITCHER};
 
 pub fn switch_file_dialog(s: &mut Cursive) {
     let mut file_selector: SelectView<OsString> = SelectView::new().autojump();
@@ -43,9 +43,7 @@ pub fn switch_file_dialog(s: &mut Cursive) {
 }
 
 fn do_switch_file(s: &mut Cursive) {
-    let file_selector = s
-        .find_name::<SelectView<OsString>>(OBJ_SWITCHER)
-        .unwrap();
+    let file_selector = s.find_name::<SelectView<OsString>>(OBJ_SWITCHER).unwrap();
     s.pop_layer();
     if let Some(rc_file) = file_selector.selection() {
         let file_name = rc_file.as_ref();
@@ -74,9 +72,7 @@ fn do_switch_file(s: &mut Cursive) {
 }
 
 fn remove_selected_file(s: &mut Cursive) {
-    let mut file_selector = s
-        .find_name::<SelectView<OsString>>(OBJ_SWITCHER)
-        .unwrap();
+    let mut file_selector = s.find_name::<SelectView<OsString>>(OBJ_SWITCHER).unwrap();
     if let Some(id) = file_selector.selected_id() {
         file_selector.remove_item(id)(s);
         s.with_user_data(|state: &mut XxvState| {

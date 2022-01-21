@@ -11,7 +11,7 @@ pub struct TilingByteReader {
     path: PathBuf,
     length: u64,
     use_large_addresses: bool,
-    display_name: String
+    display_name: String,
 }
 
 pub type Window = (u64, u64, u16, u16);
@@ -28,10 +28,10 @@ impl TilingByteReader {
             path: path_buf,
             length: file_len,
             use_large_addresses: file_len > u64::from(std::u32::MAX),
-            display_name
+            display_name,
         })
     }
-    
+
     pub fn reopen(&mut self) -> Result<()> {
         self.file = self.open_file()?;
         self.length = self.file.metadata()?.len();
@@ -45,12 +45,17 @@ impl TilingByteReader {
     pub fn file_name(&self) -> &str {
         &self.display_name
     }
-    
+
     pub fn get_path_clone(&self) -> PathBuf {
         self.path.clone()
     }
 
-    pub fn get_window(&mut self, window: Window, line_length: u64, buf: &mut Vec<u8>) -> Result<()> {
+    pub fn get_window(
+        &mut self,
+        window: Window,
+        line_length: u64,
+        buf: &mut Vec<u8>,
+    ) -> Result<()> {
         // The binary file is viewed in terms of lines.
         // The lines turn the linear byte sequence into a 2D byte grid.
         // Each line may be significantly longer than what can fit in the window.
@@ -71,11 +76,11 @@ impl TilingByteReader {
         }
         Ok(())
     }
-    
+
     pub fn get_length(&self) -> u64 {
         self.length
     }
-    
+
     pub fn use_large_addresses(&self) -> bool {
         self.use_large_addresses
     }
@@ -96,40 +101,42 @@ mod tests {
 
         let mut reader = TilingByteReader::new(tmpf.path()).unwrap();
         let mut buf = Vec::new();
-        reader.get_window((0,0,16,16).into(), 16, &mut buf).unwrap();
+        reader
+            .get_window((0, 0, 16, 16).into(), 16, &mut buf)
+            .unwrap();
         assert_eq!(buf, b"01234567")
     }
-    
+
     #[test]
     fn getting_multi_line_string_top_left() {
         let mut tmpf = tempfile::NamedTempFile::new().unwrap();
         tmpf.write(b"0123456789abcdef").unwrap();
-        
+
         let mut reader = TilingByteReader::new(tmpf.path()).unwrap();
         let mut buf = Vec::new();
-        reader.get_window((0,0,4,2), 8, &mut buf).unwrap();
+        reader.get_window((0, 0, 4, 2), 8, &mut buf).unwrap();
         assert_eq!(buf, b"012389ab")
     }
-    
+
     #[test]
     fn getting_multi_line_string_top_right() {
         let mut tmpf = tempfile::NamedTempFile::new().unwrap();
         tmpf.write(b"0123456789abcdef").unwrap();
-        
+
         let mut reader = TilingByteReader::new(tmpf.path()).unwrap();
         let mut buf = Vec::new();
-        reader.get_window((4,0,4,2), 8, &mut buf).unwrap();
+        reader.get_window((4, 0, 4, 2), 8, &mut buf).unwrap();
         assert_eq!(buf, b"4567cdef")
     }
-    
+
     #[test]
     fn getting_multi_line_string_bottom_left() {
         let mut tmpf = tempfile::NamedTempFile::new().unwrap();
         tmpf.write(b"0123456789abcdef").unwrap();
-        
+
         let mut reader = TilingByteReader::new(tmpf.path()).unwrap();
         let mut buf = Vec::new();
-        reader.get_window((0,1,4,2), 8, &mut buf).unwrap();
+        reader.get_window((0, 1, 4, 2), 8, &mut buf).unwrap();
         assert_eq!(buf, b"89ab")
     }
 }
