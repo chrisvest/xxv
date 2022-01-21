@@ -8,9 +8,11 @@ const BUFFER_SIZE: usize = 1024 * 1024;
 
 #[cfg(target_os = "linux")]
 pub fn search<F>(mut file: File, bytes: &[u8], mut consumer: F)
-    where F: FnMut(u64) {
-    if async_io_search(&mut file, &bytes, &mut consumer).is_err() {
-        sync_io_search(&mut file, &bytes, &mut consumer);
+where
+    F: FnMut(u64),
+{
+    if async_io_search(&mut file, bytes, &mut consumer).is_err() {
+        sync_io_search(&mut file, bytes, &mut consumer);
     }
 }
 

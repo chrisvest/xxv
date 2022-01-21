@@ -86,13 +86,13 @@ fn hex_to_bytes(hex_text: &mut String, bytes: &mut Vec<u8>) -> bool {
         };
         if let Ok(mut byte_value) = u8::from_str_radix(byte, 16) {
             if byte.len() == 1 {
-                byte_value = byte_value << 4;
+                byte_value <<= 4;
             }
             bytes.push(byte_value);
             i += 2;
         } else {
             // Remove characters that cannot be parsed as hexadecimal.
-            if let Ok(_) = u8::from_str_radix(&byte[0..=0], 16) {
+            if u8::from_str_radix(&byte[0..=0], 16).is_ok() {
                 hex_text.remove(i + 1);
             } else {
                 hex_text.remove(i);
@@ -100,13 +100,13 @@ fn hex_to_bytes(hex_text: &mut String, bytes: &mut Vec<u8>) -> bool {
             modified = true;
         }
     }
-    return modified;
+    modified
 }
 
 fn update_companion_accessibility(text: &str, v: &mut EditView) {
-    if text.len() > 0 && v.is_enabled() {
+    if !text.is_empty() && v.is_enabled() {
         v.disable();
-    } else if text.len() == 0 && !v.is_enabled() {
+    } else if text.is_empty() && !v.is_enabled() {
         v.enable();
     }
 }
