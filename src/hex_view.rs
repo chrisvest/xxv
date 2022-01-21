@@ -1,17 +1,17 @@
 use std::convert::TryFrom;
 
 use cursive::align::HAlign;
-use cursive::event::{Event, Key, MouseEvent};
 use cursive::event::EventResult;
-use cursive::Printer;
+use cursive::event::{Event, Key, MouseEvent};
 use cursive::theme::ColorStyle;
 use cursive::traits::View;
+use cursive::Printer;
 use cursive::Vec2;
 use unicode_width::UnicodeWidthStr;
 
-use crate::hex_reader::{HexReader, VisualMode, Highlight};
+use crate::hex_reader::{HexReader, Highlight, VisualMode};
+use crate::hex_view_printers::{HexPrinter, OffsetPrinter, TableSet, VisualPrinter};
 use crate::xxv_state::ReaderState;
-use crate::hex_view_printers::{OffsetPrinter, HexPrinter, VisualPrinter, TableSet};
 
 pub struct HexView {
     reader: HexReader,
@@ -45,17 +45,17 @@ impl HexView {
             visual_tables: TableSet::new(),
         }
     }
-    
+
     pub fn switch_reader(&mut self, reader: HexReader) {
         self.reader = reader;
         self.invalidated_data_changed = true;
         self.invalidated_resize = true;
     }
-    
+
     pub fn get_reader_state(&self) -> ReaderState {
         ReaderState::new(&self.reader)
     }
-    
+
     pub fn go_to_offset(&mut self, offset: u64) {
         self.reader.clear_highlights();
 
@@ -67,26 +67,28 @@ impl HexView {
         let line = offset / line_width;
         let line_offset = offset % line_width;
         let lines_in_file = self.reader.get_lines_in_file();
-        
+
         let target_pos = if line <= lines_in_file {
             self.reader.highlight(offset, 1, Highlight::Positive);
             (line_offset, line)
         } else {
             (0, lines_in_file)
         };
-        
+
         // Only adjust the window position if the target position is not within the window bounds.
-        if target_pos.0 < current_pos.0 || target_pos.1 < current_pos.1 ||
-            target_pos.0 > current_pos.0 + current_size.0 - 1||
-            target_pos.1 > current_pos.1 + current_size.1 - 1 {
+        if target_pos.0 < current_pos.0
+            || target_pos.1 < current_pos.1
+            || target_pos.0 > current_pos.0 + current_size.0 - 1
+            || target_pos.1 > current_pos.1 + current_size.1 - 1
+        {
             self.reader.window_pos = target_pos;
             let max_line_offset = line_width - current_size.0;
             self.reader.window_pos.0 = u64::min(max_line_offset, self.reader.window_pos.0);
         }
-        
+
         self.invalidated_data_changed = true;
     }
-    
+
     pub fn set_line_width(&mut self, length: u64) {
         self.reader.line_width = length;
         let lines_in_file = self.reader.get_lines_in_file();
@@ -96,11 +98,11 @@ impl HexView {
         self.invalidated_resize = true;
         self.invalidated_data_changed = true;
     }
-    
+
     pub fn get_line_width(&self) -> u64 {
         self.reader.line_width
     }
-    
+
     pub fn set_group(&mut self, group: u16) {
         self.reader.group = group;
         self.invalidated_resize = true;
@@ -110,27 +112,27 @@ impl HexView {
     pub fn get_group(&self) -> u16 {
         self.reader.group
     }
-    
+
     pub fn get_length(&self) -> u64 {
         self.reader.get_length()
     }
-    
+
     pub fn search(&mut self, bytes: &[u8]) {
         self.reader.clear_highlights();
         self.reader.search(bytes);
     }
-    
+
     fn toggle_visual(&mut self) -> EventResult {
         self.visual_tables.clear();
         match self.reader.get_visual_mode() {
             VisualMode::Unicode => {
                 self.reader.set_visual_mode(VisualMode::Ascii);
-            },
+            }
             VisualMode::Ascii => {
                 self.reader.set_visual_mode(VisualMode::Off);
                 self.show_visual_view = false;
                 self.invalidated_resize = true;
-            },
+            }
             VisualMode::Off => {
                 self.reader.set_visual_mode(VisualMode::Unicode);
                 self.show_visual_view = true;
@@ -139,19 +141,19 @@ impl HexView {
         }
         EventResult::Consumed(None)
     }
-    
+
     fn reload_data(&mut self) -> EventResult {
         self.reader.clear_highlights();
         self.reader.capture_before_image();
         self.invalidated_data_changed = true;
         EventResult::Consumed(None)
     }
-    
+
     fn reopen_and_reload_data(&mut self) -> EventResult {
         self.reader.reopen().unwrap();
         self.reload_data()
     }
-    
+
     fn on_char_event(&mut self, c: char) -> EventResult {
         match c {
             'j' => self.on_key_event(Key::Down),
@@ -165,18 +167,18 @@ impl HexView {
             'v' => self.toggle_visual(),
             'r' => self.reload_data(),
             'R' => self.reopen_and_reload_data(),
-            _ => EventResult::Ignored
+            _ => EventResult::Ignored,
         }
     }
-    
+
     fn on_mouse_event(&mut self, _offset: Vec2, _position: Vec2, event: MouseEvent) -> EventResult {
         match event {
             MouseEvent::WheelUp => self.on_key_event(Key::Up),
             MouseEvent::WheelDown => self.on_key_event(Key::Down),
-            _ => EventResult::Ignored
+            _ => EventResult::Ignored,
         }
     }
-    
+
     fn on_key_event(&mut self, k: Key) -> EventResult {
         let inner_height = i64::try_from(self.offsets_column_size.y).unwrap();
         let line_width = i64::try_from(self.reader.line_width).unwrap();
@@ -191,11 +193,11 @@ impl HexView {
             Key::PageUp => (0, -inner_height),
             Key::Home => (-pos_x, 0),
             Key::End => (line_width - size_x - pos_x, 0),
-            _ => (0, 0)
+            _ => (0, 0),
         };
         self.navigate(offset)
     }
-    
+
     fn navigate(&mut self, offset: (i64, i64)) -> EventResult {
         if offset != (0, 0) {
             let (x, y) = offset;
@@ -228,13 +230,13 @@ impl HexView {
             EventResult::Ignored
         }
     }
-    
+
     fn draw_bg(&self, printer: &Printer) {
         for y in 0..printer.size.y {
             printer.print_hline((0, y), printer.size.x, " ");
         }
     }
-    
+
     fn draw_title(&self, printer: &Printer) {
         let title = self.reader.file_name();
         let mut len = title.width();
@@ -259,11 +261,11 @@ impl HexView {
             }
         });
     }
-    
+
     fn build_prestyled_hex_table(&mut self) {
         self.reader.generate_hex_tables(&mut self.hex_tables);
     }
-    
+
     fn build_prestyled_visual_table(&mut self) {
         self.reader.generate_visual_tables(&mut self.visual_tables);
     }
@@ -274,22 +276,26 @@ impl View for HexView {
         self.draw_bg(printer);
         printer.print_box((0, 0), printer.size, true);
         self.draw_title(printer);
-        
+
         let mut offset_printer = OffsetPrinter {
             pos: Vec2::new(0, 0),
-            printer: &printer.offset(self.offsets_column_pos).cropped(self.offsets_column_size),
-            spans: Vec::with_capacity(1)
+            printer: &printer
+                .offset(self.offsets_column_pos)
+                .cropped(self.offsets_column_size),
+            spans: Vec::with_capacity(1),
         };
         self.reader.visit_row_offsets(&mut offset_printer);
-        
+
         let inner_height = self.offsets_column_size.y;
         let border_offset = self.offsets_column_size.x + self.offsets_column_pos.x;
         printer.print_vline(Vec2::new(border_offset, 1), inner_height, "│");
-        
+
         let mut hex_printer = HexPrinter {
             max_width: 0,
             pos: Vec2::new(0, 0),
-            printer: &printer.offset(self.hex_column_pos).cropped(self.hex_column_size),
+            printer: &printer
+                .offset(self.hex_column_pos)
+                .cropped(self.hex_column_size),
             tables: &self.hex_tables,
         };
         self.reader.visit_hex(&mut hex_printer);
@@ -297,10 +303,12 @@ impl View for HexView {
         if self.show_visual_view {
             let border_offset = self.hex_column_pos.x + self.hex_column_size.x;
             printer.print_vline(Vec2::new(border_offset, 1), inner_height, "│");
-            
+
             let mut visual_printer = VisualPrinter {
-                pos: Vec2::new(0,0),
-                printer: &printer.offset(self.visual_column_pos).cropped(self.visual_column_size),
+                pos: Vec2::new(0, 0),
+                printer: &printer
+                    .offset(self.visual_column_pos)
+                    .cropped(self.visual_column_size),
                 tables: &self.visual_tables,
             };
             self.reader.visit_hex(&mut visual_printer);
@@ -328,7 +336,7 @@ impl View for HexView {
             let colw_offsets = self.reader.get_row_offsets_width();
             self.offsets_column_pos = Vec2::new(1, 1);
             self.offsets_column_size = Vec2::new(colw_offsets, inner_height);
-            
+
             // Box-border, offsets column, separator line + space line:
             let hex_col_start = 1 + colw_offsets + 2;
             self.hex_column_pos = Vec2::new(hex_col_start, 1);
@@ -338,7 +346,7 @@ impl View for HexView {
             let reader_pos_x = group - 1;
             let vis_group_spacer: isize = if self.show_visual_view { 1 } else { 0 };
             let vis_byte_width: isize = if self.show_visual_view { 1 } else { 0 };
-            
+
             let avail_width = self.hex_column_size.x;
             let avail_width_isize = isize::try_from(avail_width).unwrap();
             let mut space_left = avail_width_isize;
@@ -355,7 +363,7 @@ impl View for HexView {
                     hex_width += 2 + byte_pair_spacer;
                     vis_width += vis_byte_width;
                     bytes_consumed += 1;
-                    
+
                     if ((reader_pos_x + i) % group) == 0 && i != 0 {
                         // The hex column group spacer replaces the byte pair spacer automatically.
                         if space_left - vis_group_spacer > 0 {
@@ -369,7 +377,7 @@ impl View for HexView {
                     break;
                 }
             }
-            
+
             if hex_width + vis_width + 1 < avail_width_isize {
                 // Add right padding to hex column.
                 hex_width += 1;
@@ -377,18 +385,18 @@ impl View for HexView {
                 // Remove the left hex column padding to squeeze in the last byte.
                 self.hex_column_pos.x -= 1;
             }
-            
+
             let hex_uw = usize::try_from(hex_width).unwrap();
             let vis_uw = usize::try_from(vis_width).unwrap();
             self.hex_column_size = Vec2::new(hex_uw, inner_height);
             self.visual_column_pos = Vec2::new(self.hex_column_pos.x + hex_uw + 1, 1);
             self.visual_column_size = Vec2::new(vis_uw, inner_height);
-            
+
             if bytes_consumed != self.reader.window_size.0 {
                 self.reader.window_size.0 = bytes_consumed;
                 self.invalidated_data_changed = true;
             }
-            
+
             self.invalidated_resize = false;
         }
 
@@ -412,11 +420,15 @@ impl View for HexView {
             Event::WindowResize => {
                 self.invalidated_resize = true;
                 EventResult::Consumed(None)
-            },
+            }
             Event::Char(c) => self.on_char_event(c),
             Event::Key(k) => self.on_key_event(k),
-            Event::Mouse { offset, position, event } => self.on_mouse_event(offset, position, event),
-            _ => EventResult::Ignored
+            Event::Mouse {
+                offset,
+                position,
+                event,
+            } => self.on_mouse_event(offset, position, event),
+            _ => EventResult::Ignored,
         }
     }
 }
@@ -451,7 +463,7 @@ mod tests {
 
         assert_eq!(view.hex_column_pos, Vec2::new(13, 1));
         assert_eq!(view.hex_column_size, Vec2::new(47, 21));
-        
+
         assert_eq!(view.visual_column_pos, Vec2::new(61, 1));
         assert_eq!(view.visual_column_size, Vec2::new(18, 21));
     }
@@ -504,7 +516,7 @@ mod tests {
 
         assert_eq!(view.hex_column_pos, Vec2::new(12, 1));
         assert_eq!(view.hex_column_size, Vec2::new(47, 21));
-        
+
         assert_eq!(view.visual_column_pos, Vec2::new(60, 1));
         assert_eq!(view.visual_column_size, Vec2::new(18, 21));
     }
@@ -530,7 +542,7 @@ mod tests {
 
         assert_eq!(view.hex_column_pos, Vec2::new(13, 1));
         assert_eq!(view.hex_column_size, Vec2::new(45, 21));
-        
+
         assert_eq!(view.visual_column_pos, Vec2::new(59, 1));
         assert_eq!(view.visual_column_size, Vec2::new(17, 21));
     }
@@ -556,7 +568,7 @@ mod tests {
 
         assert_eq!(view.hex_column_pos, Vec2::new(13, 1));
         assert_eq!(view.hex_column_size, Vec2::new(45, 21));
-        
+
         assert_eq!(view.visual_column_pos, Vec2::new(59, 1));
         assert_eq!(view.visual_column_size, Vec2::new(17, 21));
     }
@@ -583,7 +595,7 @@ mod tests {
 
         assert_eq!(view.hex_column_pos, Vec2::new(13, 1));
         assert_eq!(view.hex_column_size, Vec2::new(45, 21));
-        
+
         assert_eq!(view.visual_column_pos, Vec2::new(59, 1));
         assert_eq!(view.visual_column_size, Vec2::new(17, 21));
     }
@@ -591,7 +603,8 @@ mod tests {
     #[test]
     fn layout_w82_h24_ll32() {
         let mut tmpf = tempfile::NamedTempFile::new().unwrap();
-        tmpf.write(b"0123456789abcdef0123456789abcdef0123456789abcdef").unwrap();
+        tmpf.write(b"0123456789abcdef0123456789abcdef0123456789abcdef")
+            .unwrap();
 
         let byte_reader = TilingByteReader::new(tmpf.path()).unwrap();
         let hex_reader = HexReader::new(byte_reader).unwrap();

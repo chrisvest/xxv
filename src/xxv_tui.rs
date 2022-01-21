@@ -1,19 +1,19 @@
 use std::io::Error;
 use std::path::PathBuf;
 
+use cursive::event::Key;
+use cursive::traits::{Nameable, Resizable};
+use cursive::views::{Dialog, LinearLayout, TextView};
 use cursive::Cursive;
 use cursive::CursiveExt;
-use cursive::event::Key;
-use cursive::traits::{Resizable, Nameable};
-use cursive::views::{Dialog, LinearLayout, TextView};
 
-use crate::search_dialog::search_dialog;
 use crate::goto_dialog::open_goto_dialog;
 use crate::help_text::show_help;
 use crate::hex_reader::HexReader;
 use crate::hex_view::HexView;
 use crate::open_file_dialog::open_file_dialog;
 use crate::panic_hook::archive_last_crash;
+use crate::search_dialog::search_dialog;
 use crate::set_width_dialog::open_set_width_dialog;
 use crate::status_bar::new_status_bar;
 use crate::switch_file_dialog::switch_file_dialog;

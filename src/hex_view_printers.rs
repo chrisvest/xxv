@@ -1,7 +1,7 @@
-use cursive::{Printer, Vec2};
 use cursive::theme::{ColorStyle, Style};
 use cursive::utils::markup::StyledString;
 use cursive::utils::span::{IndexedCow, IndexedSpan, SpannedStr};
+use cursive::{Printer, Vec2};
 use unicode_width::UnicodeWidthStr;
 
 use crate::hex_reader::{HexVisitor, Highlight, OffsetsVisitor};
@@ -12,16 +12,19 @@ const GROUP_SEP: &str = "\u{00A6}";
 pub struct OffsetPrinter<'a, 'b, 'x> {
     pub pos: Vec2,
     pub printer: &'x Printer<'a, 'b>,
-    pub spans: Vec<IndexedSpan<Style>>
+    pub spans: Vec<IndexedSpan<Style>>,
 }
 
 impl<'a, 'b, 'x> OffsetsVisitor for OffsetPrinter<'a, 'b, 'x> {
     fn offset(&mut self, offset: &str) {
         if self.spans.is_empty() {
             self.spans.push(IndexedSpan {
-                content: IndexedCow::Borrowed {start: 0, end: offset.len()},
+                content: IndexedCow::Borrowed {
+                    start: 0,
+                    end: offset.len(),
+                },
                 attr: Style::from(ColorStyle::secondary()),
-                width: offset.width()
+                width: offset.width(),
             });
         }
         let styled_offset = SpannedStr::new(offset, &self.spans);
@@ -45,22 +48,25 @@ impl TableSet {
         TableSet {
             neu: Vec::new(),
             pos: Vec::new(),
-            neg: Vec::new()
+            neg: Vec::new(),
         }
     }
-    
+
     pub fn push_byte(&mut self, category: &ByteCategory, s: &'static str) {
-        self.neu.push(StyledString::styled(s, category_to_color(category)));
-        self.pos.push(StyledString::styled(s, ColorStyle::highlight_inactive()));
-        self.neg.push(StyledString::styled(s, ColorStyle::highlight()));
+        self.neu
+            .push(StyledString::styled(s, category_to_color(category)));
+        self.pos
+            .push(StyledString::styled(s, ColorStyle::highlight_inactive()));
+        self.neg
+            .push(StyledString::styled(s, ColorStyle::highlight()));
     }
-    
+
     pub fn clear(&mut self) {
         self.neu.clear();
         self.pos.clear();
         self.neg.clear();
     }
-    
+
     pub fn is_empty(&self) -> bool {
         self.neu.is_empty()
     }
@@ -71,7 +77,7 @@ fn category_to_color(category: &ByteCategory) -> ColorStyle {
         ByteCategory::AsciiControl => ColorStyle::title_primary(),
         ByteCategory::AsciiPrintable => ColorStyle::primary(),
         ByteCategory::AsciiWhitespace => ColorStyle::secondary(),
-        ByteCategory::Other => ColorStyle::title_secondary()
+        ByteCategory::Other => ColorStyle::title_secondary(),
     }
 }
 
@@ -79,7 +85,7 @@ pub struct HexPrinter<'a, 'b, 'x> {
     pub max_width: usize,
     pub pos: Vec2,
     pub printer: &'x Printer<'a, 'b>,
-    pub tables: &'x TableSet
+    pub tables: &'x TableSet,
 }
 
 impl<'a, 'b, 'x> HexVisitor for HexPrinter<'a, 'b, 'x> {
@@ -115,7 +121,7 @@ impl<'a, 'b, 'x> HexVisitor for HexPrinter<'a, 'b, 'x> {
 pub struct VisualPrinter<'a, 'b, 'x> {
     pub pos: Vec2,
     pub printer: &'x Printer<'a, 'b>,
-    pub tables: &'x TableSet
+    pub tables: &'x TableSet,
 }
 
 impl<'a, 'b, 'x> HexVisitor for VisualPrinter<'a, 'b, 'x> {

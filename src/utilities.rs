@@ -14,12 +14,12 @@ pub const PKG_DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 pub const PKG_REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");
 
 pub fn parse_number(number_str: &str) -> Result<u64, ParseIntError> {
-    if number_str.starts_with("0x") {
-        u64::from_str_radix(&number_str[2..], 16)
+    if let Some(stripped) = number_str.strip_prefix("0x") {
+        u64::from_str_radix(stripped, 16)
     } else if number_str.starts_with('0') {
         u64::from_str_radix(number_str, 8)
     } else {
-        u64::from_str_radix(number_str, 10)
+        number_str.parse::<u64>()
     }
 }
 

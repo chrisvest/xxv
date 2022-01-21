@@ -1,9 +1,11 @@
 use crate::hex_view::HexView;
 use crate::xxv_state::XxvState;
-use crate::xxv_tui::{ShowError, OBJ_CURRENT_DIR, OBJ_DIR_SELECTOR, OBJ_FILE_SELECTOR, OBJ_HEX_VIEW};
+use crate::xxv_tui::{
+    ShowError, OBJ_CURRENT_DIR, OBJ_DIR_SELECTOR, OBJ_FILE_SELECTOR, OBJ_HEX_VIEW,
+};
 use cursive::event::Key;
 use cursive::theme::Effect;
-use cursive::traits::{Resizable, Nameable};
+use cursive::traits::{Nameable, Resizable};
 use cursive::views::{
     Dialog, DummyView, LinearLayout, OnEventView, ScrollView, SelectView, TextView,
 };
@@ -53,7 +55,9 @@ pub fn open_file_dialog(s: &mut Cursive) {
 
 fn select_directory(s: &mut Cursive, dir: &OsStr) {
     let mut current_dir = s.find_name::<TextView>(OBJ_CURRENT_DIR).unwrap();
-    let mut dir_selector = s.find_name::<SelectView<OsString>>(OBJ_DIR_SELECTOR).unwrap();
+    let mut dir_selector = s
+        .find_name::<SelectView<OsString>>(OBJ_DIR_SELECTOR)
+        .unwrap();
     let mut file_selector = s
         .find_name::<SelectView<OsString>>(OBJ_FILE_SELECTOR)
         .unwrap();

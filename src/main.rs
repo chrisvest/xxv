@@ -23,22 +23,22 @@ use std::process::exit;
 use crate::utilities::{exit_reader_open_error, PKG_DESCRIPTION, PKG_NAME, PKG_VERSION};
 use crate::xxv_state::XxvState;
 
-mod utilities;
-mod panic_hook;
-mod file_search;
-mod xxv_state;
 mod byte_reader;
-mod hex_tables;
+mod file_search;
+mod goto_dialog;
+mod help_text;
 mod hex_reader;
+mod hex_tables;
 mod hex_view;
 mod hex_view_printers;
-mod set_width_dialog;
-mod goto_dialog;
 mod open_file_dialog;
-mod switch_file_dialog;
+mod panic_hook;
 mod search_dialog;
+mod set_width_dialog;
 mod status_bar;
-mod help_text;
+mod switch_file_dialog;
+mod utilities;
+mod xxv_state;
 mod xxv_tui;
 
 fn main() {
@@ -47,7 +47,7 @@ fn main() {
     let mut args = std::env::args_os();
     args.next(); // The first argument is (most likely) the path to our executable.
     let file_arg = args.next();
-    
+
     if let Some(option) = &file_arg {
         if option.eq("-h") || option.eq("--help") {
             eprintln!("{} {}", PKG_NAME, PKG_VERSION);
@@ -65,22 +65,18 @@ fn main() {
 
     let mut state = XxvState::load();
     let recent_files = state.recent_files();
-    
+
     match file_arg {
         None if recent_files.is_empty() => {
             eprintln!("Error: The 'file' argument is required.");
             eprintln!();
             eprintln!("For more information, try --help.");
             exit(64); // EX_USAGE from sysexits.h
-        },
-        None => {
-            xxv_tui::run_tui(None, state)
-        },
-        Some(file_name) => {
-            match state.open_reader(&file_name) {
-                Ok(h_reader) => xxv_tui::run_tui(Some(h_reader), state),
-                Err(e) => exit_reader_open_error(e, file_name)
-            }
         }
+        None => xxv_tui::run_tui(None, state),
+        Some(file_name) => match state.open_reader(&file_name) {
+            Ok(h_reader) => xxv_tui::run_tui(Some(h_reader), state),
+            Err(e) => exit_reader_open_error(e, file_name),
+        },
     }
 }
